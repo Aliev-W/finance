@@ -16,7 +16,7 @@ export default function AddWorker() {
 
   const [form, setForm] = useState({
     name: '', position: '', phone: '',
-    salary_amount: '', salary_currency: 'UZS', notes: ''
+    salary_amount: '', salary_currency: 'UZS', notes: '', hire_date: ''
   });
 
   const [family, setFamily] = useState([]);
@@ -31,7 +31,7 @@ export default function AddWorker() {
       setForm({
         name: w.name, position: w.position || '', phone: w.phone || '',
         salary_amount: w.salary_amount || '', salary_currency: w.salary_currency || 'UZS',
-        notes: w.notes || ''
+        notes: w.notes || '', hire_date: w.hire_date || ''
       });
       setFamily(w.family_members || []);
     }).catch(e => setError(e.message)).finally(() => setLoading(false));
@@ -134,6 +134,11 @@ export default function AddWorker() {
             <label className="label">Telefon raqami</label>
             <input name="phone" value={form.phone} onChange={handleChange}
               placeholder="+998 90 000 00 00" type="tel" className="input-field" />
+          </div>
+          <div>
+            <label className="label">Ishga kirgan sana</label>
+            <input name="hire_date" value={form.hire_date} onChange={handleChange}
+              type="date" className="input-field" />
           </div>
           <div>
             <label className="label">Izoh</label>

@@ -325,6 +325,16 @@ export default function PaySalary() {
             </div>
           </div>
 
+          {selectedWorker && form.currency === selectedWorker.salary_currency &&
+            parseFloat(form.amount) > selectedWorker.salary_amount && (
+            <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-xl px-3 py-2.5">
+              <AlertCircle className="w-4 h-4 text-orange-500 flex-shrink-0" />
+              <p className="text-sm text-orange-700">
+                Oylik maoshdan ({formatMoney(selectedWorker.salary_amount, selectedWorker.salary_currency)}) ko'p to'lov!
+              </p>
+            </div>
+          )}
+
           {/* Payment Type */}
           <div>
             <label className="label">To'lov turi</label>

@@ -49,6 +49,10 @@ async function initDB() {
     await client.execute("ALTER TABLE payments ADD COLUMN photo_url TEXT DEFAULT ''");
   } catch (e) {}
 
+  try {
+    await client.execute("ALTER TABLE workers ADD COLUMN hire_date TEXT DEFAULT ''");
+  } catch (e) {}
+
   return client;
 }
 

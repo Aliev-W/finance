@@ -36,11 +36,11 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { name, position, phone, salary_amount, salary_currency, notes } = req.body;
+    const { name, position, phone, salary_amount, salary_currency, notes, hire_date } = req.body;
     if (!name) return res.status(400).json({ error: 'Ism kiritilishi shart' });
     const result = await run(
-      `INSERT INTO workers (name, position, phone, salary_amount, salary_currency, notes) VALUES (?,?,?,?,?,?)`,
-      [name, position || '', phone || '', salary_amount || 0, salary_currency || 'UZS', notes || '']
+      `INSERT INTO workers (name, position, phone, salary_amount, salary_currency, notes, hire_date) VALUES (?,?,?,?,?,?,?)`,
+      [name, position || '', phone || '', salary_amount || 0, salary_currency || 'UZS', notes || '', hire_date || '']
     );
     res.status(201).json(await queryOne('SELECT * FROM workers WHERE id = ?', [result.lastInsertRowid]));
   } catch (err) {
@@ -50,13 +50,13 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const { name, position, phone, salary_amount, salary_currency, is_active, notes } = req.body;
+    const { name, position, phone, salary_amount, salary_currency, is_active, notes, hire_date } = req.body;
     if (!await queryOne('SELECT id FROM workers WHERE id = ?', [req.params.id]))
       return res.status(404).json({ error: 'Ishchi topilmadi' });
     await run(
-      `UPDATE workers SET name=?,position=?,phone=?,salary_amount=?,salary_currency=?,is_active=?,notes=? WHERE id=?`,
+      `UPDATE workers SET name=?,position=?,phone=?,salary_amount=?,salary_currency=?,is_active=?,notes=?,hire_date=? WHERE id=?`,
       [name, position || '', phone || '', salary_amount || 0, salary_currency || 'UZS',
-       is_active !== undefined ? (is_active ? 1 : 0) : 1, notes || '', req.params.id]
+       is_active !== undefined ? (is_active ? 1 : 0) : 1, notes || '', hire_date || '', req.params.id]
     );
     res.json(await queryOne('SELECT * FROM workers WHERE id = ?', [req.params.id]));
   } catch (err) {

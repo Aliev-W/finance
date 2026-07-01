@@ -154,7 +154,7 @@ export default function Settings() {
           )}
 
           <button onClick={downloadBackup} className="btn-primary w-full">
-            <Download className="w-4 h-4" /> Zaxira nusxa olish (.sqlite)
+            <Download className="w-4 h-4" /> Zaxira nusxa olish (.json)
           </button>
 
           <button
@@ -168,7 +168,7 @@ export default function Settings() {
           <input
             ref={fileRef}
             type="file"
-            accept=".sqlite,.db"
+            accept=".json"
             className="hidden"
             onChange={handleRestore}
           />

@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import {
   Search, Plus, ChevronRight, Phone, UserX, UserCheck, Loader2, AlertCircle
 } from 'lucide-react';
-import { getWorkers } from '../api';
-import { formatMoney } from '../utils';
+import { getWorkers, getMonthlyReport } from '../api';
+import { formatMoney, currentMonth } from '../utils';
 
 export default function Workers() {
   const navigate = useNavigate();
   const [workers, setWorkers] = useState([]);
+  const [payStatus, setPayStatus] = useState({}); // workerId -> 'full'|'partial'|'unpaid'
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
@@ -20,6 +21,16 @@ export default function Workers() {
     try {
       const list = await getWorkers({ active: tab === 'active' ? 1 : 0 });
       setWorkers(list);
+      if (tab === 'active') {
+        const report = await getMonthlyReport(currentMonth()).catch(() => null);
+        if (report?.all_workers) {
+          const map = {};
+          report.all_workers.forEach(w => { map[w.id] = w.status; });
+          setPayStatus(map);
+        }
+      } else {
+        setPayStatus({});
+      }
     } catch (e) {
       setError(e.message);
     } finally {
@@ -148,9 +159,19 @@ export default function Workers() {
               </div>
               <div className="flex-shrink-0 text-right">
                 <p className="font-bold text-gray-900 text-sm">{formatMoney(w.salary_amount, w.salary_currency)}</p>
-                <div className={`mt-1 text-xs font-medium ${w.is_active ? 'text-green-600' : 'text-gray-400'}`}>
-                  {w.is_active ? '● Faol' : '● Nofaol'}
-                </div>
+                {tab === 'active' && payStatus[w.id] ? (
+                  <div className={`mt-1 text-xs font-semibold ${
+                    payStatus[w.id] === 'full' ? 'text-green-600' :
+                    payStatus[w.id] === 'partial' ? 'text-yellow-600' : 'text-red-500'
+                  }`}>
+                    {payStatus[w.id] === 'full' ? '✓ To\'liq' :
+                     payStatus[w.id] === 'partial' ? '⏳ Qisman' : '✗ To\'lanmagan'}
+                  </div>
+                ) : (
+                  <div className={`mt-1 text-xs font-medium ${w.is_active ? 'text-green-600' : 'text-gray-400'}`}>
+                    {w.is_active ? '● Faol' : '● Nofaol'}
+                  </div>
+                )}
               </div>
               <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
             </button>

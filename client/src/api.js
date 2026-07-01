@@ -100,7 +100,9 @@ export const downloadExcel = (month) => {
   window.location.href = `/api/export/excel?month=${month}&token=${getToken()}`;
 };
 export const openPrintReport = (month) => {
-  window.open(`/api/export/print?month=${month}&token=${getToken()}`, '_blank');
+  const url = `/api/export/print?month=${month}&token=${getToken()}`;
+  const w = window.open(url, '_blank');
+  if (!w) window.location.href = url;
 };
 export const openPaymentReceipt = (id) => {
   window.open(`/api/export/payment/${id}?token=${getToken()}`, '_blank');

@@ -5,3 +5,4 @@ uploads/
 *.sqlite
 .env
 .env.local
+.fly/

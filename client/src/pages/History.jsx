@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  Filter, Image, Trash2, Loader2, AlertCircle, Receipt, X, ChevronDown
+  Filter, Image, Trash2, Loader2, AlertCircle, Receipt, X, ChevronDown,
+  User, MessageSquare, Clock, Banknote
 } from 'lucide-react';
 import { getPayments, getWorkers, deletePayment } from '../api';
 import { formatMoney, formatDate, currentMonth, MONTHS_LIST, monthLabel } from '../utils';
@@ -204,46 +205,64 @@ function PaymentCard({ payment: p, onViewPhoto, onDelete }) {
         </div>
       </div>
 
-      <div className="mt-3 pt-3 border-t border-gray-50">
-        <div className="flex items-center justify-between">
-          <div className="text-xs text-gray-400">{formatDate(p.paid_at)}</div>
+      <div className="mt-3 pt-3 border-t border-gray-100">
+        <button
+          onClick={() => setExpanded(e => !e)}
+          className="w-full flex items-center justify-between"
+        >
+          <div className="flex items-center gap-1.5 text-xs text-gray-400">
+            <Clock className="w-3.5 h-3.5" />
+            {formatDate(p.paid_at)}
+          </div>
           <div className="flex items-center gap-2">
             {(p.photo_url || p.signature_photo) && (
               <button
-                onClick={onViewPhoto}
-                className="flex items-center gap-1 text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-lg"
+                onClick={e => { e.stopPropagation(); onViewPhoto(); }}
+                className="flex items-center gap-1 text-xs text-blue-600 font-semibold bg-blue-50 px-2.5 py-1 rounded-lg"
               >
                 <Image className="w-3.5 h-3.5" /> Rasm
               </button>
             )}
-            <button
-              onClick={() => setExpanded(e => !e)}
-              className="flex items-center gap-1 text-xs text-gray-400"
-            >
-              <ChevronDown className={`w-4 h-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
-            </button>
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${expanded ? 'bg-gray-100' : ''}`}>
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
+            </div>
           </div>
-        </div>
+        </button>
 
         {expanded && (
-          <div className="mt-3 space-y-1.5 text-sm">
+          <div className="mt-3 space-y-2">
             {p.receiver_name && (
-              <div className="flex justify-between">
-                <span className="text-gray-400">Qabul qildi:</span>
-                <span className="font-medium text-gray-700">{p.receiver_name} {p.receiver_relation ? `(${p.receiver_relation})` : ''}</span>
+              <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-3 py-2.5">
+                <div className="w-7 h-7 rounded-lg bg-white border border-gray-100 flex items-center justify-center flex-shrink-0">
+                  <User className="w-3.5 h-3.5 text-gray-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-400 leading-none mb-0.5">Qabul qildi</p>
+                  <p className="text-sm font-semibold text-gray-800 leading-tight">
+                    {p.receiver_name}
+                    {p.receiver_relation && (
+                      <span className="text-gray-400 font-normal ml-1">({p.receiver_relation})</span>
+                    )}
+                  </p>
+                </div>
               </div>
             )}
             {p.notes && (
-              <div>
-                <span className="text-gray-400">Izoh: </span>
-                <span className="text-gray-700">{p.notes}</span>
+              <div className="flex items-start gap-3 bg-gray-50 rounded-xl px-3 py-2.5">
+                <div className="w-7 h-7 rounded-lg bg-white border border-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <MessageSquare className="w-3.5 h-3.5 text-gray-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-400 leading-none mb-0.5">Izoh</p>
+                  <p className="text-sm text-gray-700 leading-snug">{p.notes}</p>
+                </div>
               </div>
             )}
             <button
               onClick={onDelete}
-              className="flex items-center gap-1.5 text-red-500 text-xs font-medium mt-2 hover:text-red-600"
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-50 border border-red-100 text-red-500 text-sm font-semibold hover:bg-red-100 active:bg-red-200 transition-colors"
             >
-              <Trash2 className="w-3.5 h-3.5" /> To'lovni o'chirish
+              <Trash2 className="w-4 h-4" /> To'lovni o'chirish
             </button>
           </div>
         )}

@@ -17,22 +17,8 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-const DATA_DIR = process.env.DATA_DIR || __dirname;
-const uploadsDir = path.join(DATA_DIR, 'uploads');
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-
-app.use('/uploads', express.static(uploadsDir));
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || '.jpg';
-    cb(null, `photo_${Date.now()}_${Math.random().toString(36).substr(2, 6)}${ext}`);
-  }
-});
-
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
@@ -42,7 +28,9 @@ const upload = multer({
 
 app.post('/api/upload', upload.single('photo'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Rasm yuklanmadi' });
-  res.json({ filename: req.file.filename, url: `/uploads/${req.file.filename}` });
+  const base64 = req.file.buffer.toString('base64');
+  const dataUrl = `data:${req.file.mimetype};base64,${base64}`;
+  res.json({ url: dataUrl });
 });
 
 app.use('/api/workers', require('./routes/workers'));
@@ -55,7 +43,7 @@ const clientDist = path.join(__dirname, 'client', 'dist');
 if (fs.existsSync(clientDist)) {
   app.use(express.static(clientDist));
   app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api') && !req.path.startsWith('/uploads')) {
+    if (!req.path.startsWith('/api')) {
       res.sendFile(path.join(clientDist, 'index.html'));
     }
   });

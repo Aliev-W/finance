@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { RotateCcw, CheckCircle } from 'lucide-react';
 
 export default function SignaturePad({ onCapture, onClear }) {
@@ -8,6 +8,17 @@ export default function SignaturePad({ onCapture, onClear }) {
   const lastY = useRef(0);
   const [hasDrawn, setHasDrawn] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  const autoSave = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.toBlob(blob => {
+      if (!blob) return;
+      const file = new File([blob], 'imzo.png', { type: 'image/png' });
+      onCapture(file);
+      setSaved(true);
+    }, 'image/png');
+  }, [onCapture]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -34,7 +45,6 @@ export default function SignaturePad({ onCapture, onClear }) {
       const pos = getPos(e);
       lastX.current = pos.x;
       lastY.current = pos.y;
-      // Draw a dot on tap
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, 1.2, 0, Math.PI * 2);
       ctx.fillStyle = '#111827';
@@ -57,7 +67,16 @@ export default function SignaturePad({ onCapture, onClear }) {
 
     function onEnd(e) {
       e.preventDefault();
+      if (!isDrawing.current) return;
       isDrawing.current = false;
+      // Auto-save after each stroke
+      const canvas = canvasRef.current;
+      canvas.toBlob(blob => {
+        if (!blob) return;
+        const file = new File([blob], 'imzo.png', { type: 'image/png' });
+        onCapture(file);
+        setSaved(true);
+      }, 'image/png');
     }
 
     canvas.addEventListener('mousedown', onStart);
@@ -77,7 +96,7 @@ export default function SignaturePad({ onCapture, onClear }) {
       canvas.removeEventListener('touchmove', onMove);
       canvas.removeEventListener('touchend', onEnd);
     };
-  }, []);
+  }, [onCapture]);
 
   const clear = () => {
     const canvas = canvasRef.current;
@@ -87,24 +106,11 @@ export default function SignaturePad({ onCapture, onClear }) {
     onClear?.();
   };
 
-  const save = () => {
-    const canvas = canvasRef.current;
-    canvas.toBlob(blob => {
-      if (!blob) return;
-      const file = new File([blob], 'imzo.png', { type: 'image/png' });
-      onCapture(file);
-      setSaved(true);
-    }, 'image/png');
-  };
-
   return (
     <div className="space-y-2">
-      {/* Canvas area */}
       <div className="relative rounded-2xl overflow-hidden bg-white border-2 border-dashed border-gray-200"
         style={{ cursor: 'crosshair' }}>
-        {/* Signature baseline */}
         <div className="absolute bottom-6 left-5 right-5 border-b border-gray-100 pointer-events-none" />
-
         <canvas
           ref={canvasRef}
           width={800}
@@ -112,42 +118,25 @@ export default function SignaturePad({ onCapture, onClear }) {
           className="w-full block"
           style={{ height: '130px', touchAction: 'none', userSelect: 'none' }}
         />
-
-        {/* Placeholder hint */}
         {!hasDrawn && (
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-1">
             <span className="text-3xl opacity-20">✍️</span>
             <p className="text-gray-300 text-sm select-none">Barmoq bilan imzo qo'ying</p>
           </div>
         )}
-
-        {/* Saved badge */}
         {saved && (
           <div className="absolute top-2 right-2 flex items-center gap-1 bg-green-100 text-green-700 text-xs font-semibold px-2.5 py-1 rounded-full">
             <CheckCircle className="w-3 h-3" /> Saqlandi
           </div>
         )}
       </div>
-
-      {/* Buttons */}
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={clear}
-          className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 active:bg-gray-100 transition-colors flex items-center justify-center gap-1.5"
-        >
-          <RotateCcw className="w-3.5 h-3.5" /> Qayta
-        </button>
-        {hasDrawn && !saved && (
-          <button
-            type="button"
-            onClick={save}
-            className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 active:bg-blue-800 transition-colors flex items-center justify-center gap-1.5"
-          >
-            <CheckCircle className="w-4 h-4" /> Tasdiqlash
-          </button>
-        )}
-      </div>
+      <button
+        type="button"
+        onClick={clear}
+        className="w-full py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 active:bg-gray-100 transition-colors flex items-center justify-center gap-1.5"
+      >
+        <RotateCcw className="w-3.5 h-3.5" /> Tozalash
+      </button>
     </div>
   );
 }

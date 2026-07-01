@@ -32,6 +32,7 @@ export default function PaySalary() {
   const [existingPayments, setExistingPayments] = useState([]);
   const [signatureFile, setSignatureFile] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
+  const [showSignature, setShowSignature] = useState(false);
   const [showPhoto, setShowPhoto] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -412,17 +413,34 @@ export default function PaySalary() {
           )}
         </div>
 
-        {/* Signature */}
-        <div className="card space-y-3">
-          <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2">
-            <PenLine className="w-4 h-4 text-blue-500" /> Imzo
-            {signatureFile && <span className="ml-auto text-xs text-green-600 font-medium">✓ Tayyor</span>}
-          </h2>
-          <SignaturePad
-            key={`sig-${selectedWorker?.id}`}
-            onCapture={setSignatureFile}
-            onClear={() => setSignatureFile(null)}
-          />
+        {/* Signature - collapsible */}
+        <div className="card">
+          <button
+            type="button"
+            onClick={() => setShowSignature(s => !s)}
+            className="flex items-center justify-between w-full"
+          >
+            <span className="font-semibold text-gray-700 text-sm flex items-center gap-2">
+              <PenLine className="w-4 h-4 text-gray-400" />
+              Imzo
+              <span className="text-xs text-gray-400 font-normal">(ixtiyoriy)</span>
+            </span>
+            <div className="flex items-center gap-1.5">
+              {signatureFile && <span className="text-xs text-green-600 font-semibold">✓ Saqlandi</span>}
+              {showSignature
+                ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                : <ChevronDown className="w-4 h-4 text-gray-400" />}
+            </div>
+          </button>
+          {showSignature && (
+            <div className="mt-3">
+              <SignaturePad
+                key={`sig-${selectedWorker?.id}`}
+                onCapture={setSignatureFile}
+                onClear={() => setSignatureFile(null)}
+              />
+            </div>
+          )}
         </div>
 
         {/* Photo - collapsible */}

@@ -62,31 +62,26 @@ export default function History() {
       </div>
 
       {/* Filters */}
-      <div className="card space-y-3">
-        <div className="flex items-center gap-2 text-sm font-semibold text-gray-600">
-          <Filter className="w-4 h-4" /> Filtr
-        </div>
-        <div className="flex gap-3">
-          <select
-            value={month}
-            onChange={e => setMonth(e.target.value)}
-            className="input-field flex-1 text-sm"
-          >
-            {MONTHS_LIST().map(m => (
-              <option key={m.value} value={m.value}>{m.label}</option>
-            ))}
-          </select>
-          <select
-            value={workerId}
-            onChange={e => setWorkerId(e.target.value)}
-            className="input-field flex-1 text-sm"
-          >
-            <option value="">Barcha ishchilar</option>
-            {workers.map(w => (
-              <option key={w.id} value={w.id}>{w.name}</option>
-            ))}
-          </select>
-        </div>
+      <div className="flex gap-2">
+        <select
+          value={month}
+          onChange={e => setMonth(e.target.value)}
+          className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          {MONTHS_LIST().map(m => (
+            <option key={m.value} value={m.value}>{m.label}</option>
+          ))}
+        </select>
+        <select
+          value={workerId}
+          onChange={e => setWorkerId(e.target.value)}
+          className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="">Barcha ishchilar</option>
+          {workers.map(w => (
+            <option key={w.id} value={w.id}>{w.name}</option>
+          ))}
+        </select>
       </div>
 
       {/* Summary */}

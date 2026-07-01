@@ -1,0 +1,23 @@
+[build]
+  base = "client"
+  publish = "dist"
+  command = "npm run build"
+
+# API so'rovlarini Railway backendga yo'naltirish
+[[redirects]]
+  from = "/api/*"
+  to = "https://RAILWAY_URL/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/uploads/*"
+  to = "https://RAILWAY_URL/uploads/:splat"
+  status = 200
+  force = true
+
+# React Router uchun
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

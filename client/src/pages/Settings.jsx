@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, Shield, Database, Calendar, Download, Upload,
-  Lock, Unlock, Trash2, CheckCircle, AlertCircle, ChevronRight, Eye, EyeOff
+  Lock, Unlock, Trash2, CheckCircle, AlertCircle, ChevronRight, Eye, EyeOff, LogOut
 } from 'lucide-react';
 import { downloadBackup, restoreBackup } from '../api';
 
@@ -198,6 +198,18 @@ export default function Settings() {
           <ChevronRight className="w-4 h-4 text-gray-300" />
         </button>
       </div>
+
+      {/* Chiqish */}
+      <button
+        onClick={() => {
+          localStorage.removeItem('auth_token');
+          sessionStorage.removeItem('unlocked');
+          window.location.reload();
+        }}
+        className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition-colors border border-red-100"
+      >
+        <LogOut className="w-4 h-4" /> Tizimdan chiqish
+      </button>
 
       {/* App info */}
       <div className="text-center text-xs text-gray-300 pb-2">

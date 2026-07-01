@@ -18,7 +18,7 @@ export default function History() {
   const [workerId, setWorkerId] = useState('');
   const [deleteId, setDeleteId] = useState(null);
 
-  const [viewPhoto, setViewPhoto] = useState(null);
+  const [viewPhoto, setViewPhoto] = useState(null); // { url, label }[]
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -126,7 +126,12 @@ export default function History() {
             <PaymentCard
               key={p.id}
               payment={p}
-              onViewPhoto={() => setViewPhoto(p.signature_photo)}
+              onViewPhoto={() => {
+                const imgs = [];
+                if (p.photo_url) imgs.push({ url: p.photo_url, label: 'Rasm' });
+                if (p.signature_photo) imgs.push({ url: p.signature_photo, label: 'Imzo' });
+                setViewPhoto(imgs);
+              }}
               onDelete={() => setDeleteId(p.id)}
             />
           ))}
@@ -136,7 +141,7 @@ export default function History() {
       {/* Photo viewer */}
       {viewPhoto && (
         <div
-          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 gap-4"
           onClick={() => setViewPhoto(null)}
         >
           <button
@@ -145,12 +150,18 @@ export default function History() {
           >
             <X className="w-5 h-5" />
           </button>
-          <img
-            src={viewPhoto}
-            alt="Imzo rasmi"
-            className="max-w-full max-h-full rounded-2xl object-contain"
-            onClick={e => e.stopPropagation()}
-          />
+          {viewPhoto.map((img, i) => (
+            <div key={i} className="flex flex-col items-center gap-1" onClick={e => e.stopPropagation()}>
+              {viewPhoto.length > 1 && (
+                <span className="text-white/60 text-xs font-medium">{img.label}</span>
+              )}
+              <img
+                src={img.url}
+                alt={img.label}
+                className="max-w-full max-h-[40vh] rounded-2xl object-contain"
+              />
+            </div>
+          ))}
         </div>
       )}
 
@@ -194,7 +205,7 @@ function PaymentCard({ payment: p, onViewPhoto, onDelete }) {
         <div className="flex items-center justify-between">
           <div className="text-xs text-gray-400">{formatDate(p.paid_at)}</div>
           <div className="flex items-center gap-2">
-            {p.signature_photo && (
+            {(p.photo_url || p.signature_photo) && (
               <button
                 onClick={onViewPhoto}
                 className="flex items-center gap-1 text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-lg"

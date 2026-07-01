@@ -208,10 +208,12 @@ export default function Dashboard() {
                       <p className="text-xs text-gray-400 truncate">{w.position || '—'}</p>
                       {w.status === 'partial' && w.salary_currency && (
                         <p className="text-xs text-amber-600 font-medium">
-                          Qoldi: {formatMoney(
-                            w.salary_amount - (w.salary_currency === 'UZS' ? w.totalPaidUZS : w.totalPaidUSD),
-                            w.salary_currency
-                          )}
+                          {(() => {
+                            const paid = w.salary_currency === 'UZS' ? w.totalPaidUZS : w.totalPaidUSD;
+                            const crossPaid = w.salary_currency === 'UZS' ? w.totalPaidUSD : w.totalPaidUZS;
+                            if (paid === 0 && crossPaid > 0) return "Boshqa valyutada to'langan";
+                            return `Qoldi: ${formatMoney(Math.max(0, w.salary_amount - paid), w.salary_currency)}`;
+                          })()}
                         </p>
                       )}
                     </div>

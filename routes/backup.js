@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { query, run } = require('../database');
+const { query, transaction } = require('../database');
 
 router.get('/download', async (req, res) => {
   try {
@@ -42,31 +42,34 @@ router.post('/restore', upload.single('backup'), async (req, res) => {
     if (!data.workers || !data.payments)
       return res.status(400).json({ error: "Noto'g'ri backup fayl formati" });
 
-    await run('DELETE FROM payments', []);
-    await run('DELETE FROM family_members', []);
-    await run('DELETE FROM workers', []);
+    const statements = [
+      { sql: 'DELETE FROM payments', args: [] },
+      { sql: 'DELETE FROM family_members', args: [] },
+      { sql: 'DELETE FROM workers', args: [] },
+    ];
 
     for (const w of data.workers) {
-      await run(
-        `INSERT INTO workers (id, name, position, phone, salary_amount, salary_currency, is_active, notes, created_at) VALUES (?,?,?,?,?,?,?,?,?)`,
-        [w.id, w.name, w.position||'', w.phone||'', w.salary_amount||0, w.salary_currency||'UZS', w.is_active??1, w.notes||'', w.created_at||new Date().toISOString()]
-      );
+      statements.push({
+        sql: `INSERT INTO workers (id, name, position, phone, salary_amount, salary_currency, is_active, notes, created_at) VALUES (?,?,?,?,?,?,?,?,?)`,
+        args: [w.id, w.name||'', w.position||'', w.phone||'', w.salary_amount||0, w.salary_currency||'UZS', w.is_active??1, w.notes||'', w.created_at||new Date().toISOString()]
+      });
     }
 
     for (const m of (data.family_members || [])) {
-      await run(
-        `INSERT INTO family_members (id, worker_id, name, relationship, phone, is_primary) VALUES (?,?,?,?,?,?)`,
-        [m.id, m.worker_id, m.name, m.relationship||'Oila azosi', m.phone||'', m.is_primary||0]
-      );
+      statements.push({
+        sql: `INSERT INTO family_members (id, worker_id, name, relationship, phone, is_primary) VALUES (?,?,?,?,?,?)`,
+        args: [m.id, m.worker_id, m.name, m.relationship||'Oila azosi', m.phone||'', m.is_primary||0]
+      });
     }
 
     for (const p of data.payments) {
-      await run(
-        `INSERT INTO payments (id, worker_id, family_member_id, payment_month, amount, currency, payment_type, receiver_name, receiver_relation, signature_photo, photo_url, notes, paid_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-        [p.id, p.worker_id, p.family_member_id||null, p.payment_month, p.amount, p.currency||'UZS', p.payment_type||'full', p.receiver_name||'', p.receiver_relation||'', p.signature_photo||'', p.photo_url||'', p.notes||'', p.paid_at||new Date().toISOString()]
-      );
+      statements.push({
+        sql: `INSERT INTO payments (id, worker_id, family_member_id, payment_month, amount, currency, payment_type, receiver_name, receiver_relation, signature_photo, photo_url, notes, paid_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        args: [p.id, p.worker_id, p.family_member_id||null, p.payment_month, p.amount, p.currency||'UZS', p.payment_type||'full', p.receiver_name||'', p.receiver_relation||'', p.signature_photo||'', p.photo_url||'', p.notes||'', p.paid_at||new Date().toISOString()]
+      });
     }
 
+    await transaction(statements);
     res.json({ success: true, message: "Ma'lumotlar muvaffaqiyatli tiklandi" });
   } catch (err) {
     res.status(500).json({ error: 'Tiklashda xatolik: ' + err.message });

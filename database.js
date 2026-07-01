@@ -71,7 +71,11 @@ async function run(sql, params = []) {
   return { lastInsertRowid: Number(result.lastInsertRowid) };
 }
 
+async function transaction(statements) {
+  await client.batch(statements.map(s => ({ sql: s.sql, args: s.args || [] })), 'write');
+}
+
 function saveNow() {}
 async function reinitDB() {}
 
-module.exports = { initDB, reinitDB, saveNow, query, queryOne, run };
+module.exports = { initDB, reinitDB, saveNow, query, queryOne, run, transaction };

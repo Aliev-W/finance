@@ -81,7 +81,7 @@ export default function PaySalary() {
       setForm(p => ({ ...p, family_member_id: '', receiver_name: '', receiver_relation: "O'zi" }));
       return;
     }
-    const member = family.find(m => m.id === parseInt(fid));
+    const member = family.find(m => String(m.id) === String(fid));
     if (member) {
       setForm(p => ({
         ...p,
@@ -172,9 +172,24 @@ export default function PaySalary() {
           <button
             onClick={() => {
               setSuccess(false);
+              setSelectedWorker(null);
+              setWorkerSearch('');
+              setFamily([]);
+              setExistingPayments([]);
               setSignatureFile(null);
               setPhotoFile(null);
-              setForm(p => ({ ...p, notes: '', payment_type: 'full' }));
+              setShowSignature(false);
+              setShowPhoto(false);
+              setForm(prev => ({
+                payment_month: prev.payment_month,
+                amount: '',
+                currency: 'UZS',
+                payment_type: 'full',
+                receiver_name: '',
+                receiver_relation: "O'zi",
+                family_member_id: '',
+                notes: ''
+              }));
             }}
             className="btn-secondary flex-1"
           >
@@ -327,11 +342,11 @@ export default function PaySalary() {
           </div>
 
           {selectedWorker && form.currency === selectedWorker.salary_currency &&
-            parseFloat(form.amount) > selectedWorker.salary_amount && (
+            parseFloat(form.amount) + paidThisMonth > selectedWorker.salary_amount && (
             <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-xl px-3 py-2.5">
               <AlertCircle className="w-4 h-4 text-orange-500 flex-shrink-0" />
               <p className="text-sm text-orange-700">
-                Oylik maoshdan ({formatMoney(selectedWorker.salary_amount, selectedWorker.salary_currency)}) ko'p to'lov!
+                Jami to'lov maoshdan ({formatMoney(selectedWorker.salary_amount, selectedWorker.salary_currency)}) oshib ketadi!
               </p>
             </div>
           )}

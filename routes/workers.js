@@ -51,12 +51,17 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { name, position, phone, salary_amount, salary_currency, is_active, notes, hire_date } = req.body;
-    if (!await queryOne('SELECT id FROM workers WHERE id = ?', [req.params.id]))
-      return res.status(404).json({ error: 'Ishchi topilmadi' });
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Ism kiritilishi shart' });
+    const salaryNum = parseFloat(salary_amount);
+    if (!isNaN(salaryNum) && salaryNum < 0) return res.status(400).json({ error: "Maosh manfiy bo'lishi mumkin emas" });
+    const existing = await queryOne('SELECT * FROM workers WHERE id = ?', [req.params.id]);
+    if (!existing) return res.status(404).json({ error: 'Ishchi topilmadi' });
     await run(
       `UPDATE workers SET name=?,position=?,phone=?,salary_amount=?,salary_currency=?,is_active=?,notes=?,hire_date=? WHERE id=?`,
-      [name, position || '', phone || '', salary_amount || 0, salary_currency || 'UZS',
-       is_active !== undefined ? (is_active ? 1 : 0) : 1, notes || '', hire_date || '', req.params.id]
+      [name.trim(), position || '', phone || '', isNaN(salaryNum) ? 0 : salaryNum,
+       salary_currency || 'UZS',
+       is_active !== undefined ? (is_active ? 1 : 0) : existing.is_active,
+       notes || '', hire_date || '', req.params.id]
     );
     res.json(await queryOne('SELECT * FROM workers WHERE id = ?', [req.params.id]));
   } catch (err) {
@@ -111,6 +116,8 @@ router.post('/:id/family', async (req, res) => {
 router.put('/:id/family/:fid', async (req, res) => {
   try {
     const { name, relationship, phone, is_primary } = req.body;
+    const existing = await queryOne('SELECT id FROM family_members WHERE id = ? AND worker_id = ?', [req.params.fid, req.params.id]);
+    if (!existing) return res.status(404).json({ error: "Oila a'zosi topilmadi" });
     if (is_primary) await run('UPDATE family_members SET is_primary = 0 WHERE worker_id = ?', [req.params.id]);
     await run(
       `UPDATE family_members SET name=?,relationship=?,phone=?,is_primary=? WHERE id=? AND worker_id=?`,

@@ -74,21 +74,34 @@ router.get('/annual', async (req, res) => {
     if (!year) return res.status(400).json({ error: 'Yil kiritilishi shart' });
 
     const activeRows = await query('SELECT count(*) as c FROM workers WHERE is_active = 1', []);
-    const activeCount = activeRows[0]?.c || 0;
+    const activeCount = Number(activeRows[0]?.c || 0);
+
+    const allPayments = await query(
+      'SELECT worker_id, payment_type, amount, currency, payment_month FROM payments WHERE payment_month LIKE ?',
+      [`${year}-%`]
+    );
+
+    const byMonth = {};
+    allPayments.forEach(p => {
+      if (!byMonth[p.payment_month]) byMonth[p.payment_month] = {};
+      const byW = byMonth[p.payment_month];
+      if (!byW[p.worker_id]) byW[p.worker_id] = [];
+      byW[p.worker_id].push(p);
+    });
 
     const months = [];
     for (let m = 1; m <= 12; m++) {
       const month = `${year}-${String(m).padStart(2, '0')}`;
-      const payments = await query('SELECT worker_id, payment_type, amount, currency FROM payments WHERE payment_month = ?', [month]);
-      const byW = {};
-      payments.forEach(p => { if (!byW[p.worker_id]) byW[p.worker_id] = []; byW[p.worker_id].push(p); });
-      let full = 0, partial = 0;
+      const byW = byMonth[month] || {};
+      let full = 0, partial = 0, totalUZS = 0, totalUSD = 0;
       Object.values(byW).forEach(ps => {
         if (ps.some(p => p.payment_type === 'full')) full++;
         else partial++;
+        ps.forEach(p => {
+          if (p.currency === 'USD') totalUSD += Number(p.amount);
+          else totalUZS += Number(p.amount);
+        });
       });
-      const totalUZS = payments.filter(p => p.currency === 'UZS').reduce((s, p) => s + Number(p.amount), 0);
-      const totalUSD = payments.filter(p => p.currency === 'USD').reduce((s, p) => s + Number(p.amount), 0);
       months.push({ month, paid_full: full, paid_partial: partial, total_paid: full + partial, unpaid: Math.max(0, activeCount - full - partial), total_active: activeCount, total_uzs: totalUZS, total_usd: totalUSD });
     }
 

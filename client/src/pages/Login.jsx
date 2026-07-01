@@ -26,71 +26,72 @@ export default function Login({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-700 to-blue-800">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-5">
 
-      {/* Yuqori qism — logo */}
-      <div className="flex flex-col items-center justify-center flex-1 px-6 pt-16 pb-10">
-        <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center text-5xl mb-5 shadow-lg">
+      {/* Logo */}
+      <div className="flex flex-col items-center mb-10">
+        <div className="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-5xl mb-5 shadow-lg shadow-blue-200">
           💰
         </div>
-        <h1 className="text-white text-2xl font-bold">Oylik Tizimi</h1>
-        <p className="text-blue-200 text-sm mt-1">Ishchilar oylik boshqaruvi</p>
+        <h1 className="text-2xl font-bold text-gray-900">Oylik Tizimi</h1>
+        <p className="text-sm text-gray-400 mt-1">Ishchilar oylik boshqaruvi</p>
       </div>
 
-      {/* Pastki qism — forma */}
-      <div className="bg-gray-50 rounded-t-3xl px-5 pt-8 pb-10 shadow-2xl">
-        <h2 className="text-gray-900 text-lg font-bold mb-1">Tizimga kirish</h2>
-        <p className="text-gray-400 text-sm mb-6">Login va parolingizni kiriting</p>
+      {/* Forma */}
+      <div className="card w-full max-w-sm p-6 space-y-4">
+        <div>
+          <label className="label">Login</label>
+          <input
+            type="text"
+            value={username}
+            onChange={e => { setUsername(e.target.value); setError(''); }}
+            placeholder="admin"
+            autoComplete="username"
+            autoCapitalize="none"
+            className="input-field"
+          />
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="label">Login</label>
+        <div>
+          <label className="label">Parol</label>
+          <div className="relative">
             <input
-              type="text"
-              value={username}
-              onChange={e => { setUsername(e.target.value); setError(''); }}
-              placeholder="admin"
-              autoComplete="username"
-              autoCapitalize="none"
-              className="input-field"
+              type={showPass ? 'text' : 'password'}
+              value={password}
+              onChange={e => { setPassword(e.target.value); setError(''); }}
+              placeholder="••••••••"
+              autoComplete="current-password"
+              className="input-field pr-12"
             />
+            <button
+              type="button"
+              onClick={() => setShowPass(p => !p)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
           </div>
+        </div>
 
-          <div>
-            <label className="label">Parol</label>
-            <div className="relative">
-              <input
-                type={showPass ? 'text' : 'password'}
-                value={password}
-                onChange={e => { setPassword(e.target.value); setError(''); }}
-                placeholder="••••••••"
-                autoComplete="current-password"
-                className="input-field pr-12"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPass(p => !p)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
+        {error && (
+          <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
+            <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+            <p className="text-sm text-red-600">{error}</p>
           </div>
+        )}
 
-          {error && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
-          )}
-
-          <button type="submit" disabled={loading} className="btn-primary w-full text-base py-3.5 mt-2">
-            {loading
-              ? <><Loader2 className="w-5 h-5 animate-spin" /> Kirish...</>
-              : 'Kirish'}
-          </button>
-        </form>
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          className="btn-primary w-full text-base py-3.5"
+        >
+          {loading
+            ? <><Loader2 className="w-5 h-5 animate-spin" /> Kirish...</>
+            : 'Kirish'}
+        </button>
       </div>
+
+      <p className="text-xs text-gray-300 mt-8">v2.0</p>
     </div>
   );
 }

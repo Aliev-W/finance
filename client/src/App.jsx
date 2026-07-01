@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import PinLock from './components/PinLock';
@@ -12,6 +12,13 @@ import Annual from './pages/Annual';
 import Settings from './pages/Settings';
 
 export default function App() {
+  useEffect(() => {
+    const ping = () => fetch('/api/ping').catch(() => {});
+    ping();
+    const id = setInterval(ping, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+
   const [unlocked, setUnlocked] = useState(() => {
     const pin = localStorage.getItem('app_pin');
     if (!pin) return true;

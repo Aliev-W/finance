@@ -33,6 +33,8 @@ app.post('/api/upload', upload.single('photo'), (req, res) => {
   res.json({ url: dataUrl });
 });
 
+app.get('/api/ping', (req, res) => res.json({ ok: true, t: Date.now() }));
+
 app.use('/api/workers', require('./routes/workers'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/reports', require('./routes/reports'));

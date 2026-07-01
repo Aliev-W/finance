@@ -19,15 +19,15 @@ export default function Workers() {
     setLoading(true);
     setError(null);
     try {
-      const list = await getWorkers({ active: tab === 'active' ? 1 : 0 });
+      const [list, report] = await Promise.all([
+        getWorkers({ active: tab === 'active' ? 1 : 0 }),
+        tab === 'active' ? getMonthlyReport(currentMonth()).catch(() => null) : Promise.resolve(null)
+      ]);
       setWorkers(list);
-      if (tab === 'active') {
-        const report = await getMonthlyReport(currentMonth()).catch(() => null);
-        if (report?.all_workers) {
-          const map = {};
-          report.all_workers.forEach(w => { map[w.id] = w.status; });
-          setPayStatus(map);
-        }
+      if (report?.all_workers) {
+        const map = {};
+        report.all_workers.forEach(w => { map[w.id] = w.status; });
+        setPayStatus(map);
       } else {
         setPayStatus({});
       }

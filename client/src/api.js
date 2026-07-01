@@ -26,6 +26,27 @@ async function request(path, options = {}) {
   return res.json();
 }
 
+// Simple in-memory cache (cleared after any mutation)
+const _cache = new Map();
+const CACHE_TTL = 20_000; // 20 seconds
+
+function cacheGet(key) {
+  const e = _cache.get(key);
+  if (!e) return null;
+  if (Date.now() - e.t > CACHE_TTL) { _cache.delete(key); return null; }
+  return e.d;
+}
+function cacheSet(key, data) { _cache.set(key, { d: data, t: Date.now() }); }
+export function clearCache() { _cache.clear(); }
+
+async function cachedRequest(key, path) {
+  const hit = cacheGet(key);
+  if (hit) return hit;
+  const data = await request(path);
+  cacheSet(key, data);
+  return data;
+}
+
 // Auth
 export const loginUser = (username, password) =>
   request('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
@@ -34,13 +55,17 @@ export const checkAuth = () => request('/auth/check');
 // Workers
 export const getWorkers = (params = {}) => {
   const q = new URLSearchParams(params).toString();
-  return request(`/workers${q ? '?' + q : ''}`);
+  return cachedRequest(`workers:${q}`, `/workers${q ? '?' + q : ''}`);
 };
 export const getWorker = (id) => request(`/workers/${id}`);
-export const createWorker = (data) => request('/workers', { method: 'POST', body: JSON.stringify(data) });
-export const updateWorker = (id, data) => request(`/workers/${id}`, { method: 'PUT', body: JSON.stringify(data) });
-export const toggleWorkerActive = (id) => request(`/workers/${id}/toggle-active`, { method: 'PATCH' });
-export const deleteWorker = (id) => request(`/workers/${id}`, { method: 'DELETE' });
+export const createWorker = (data) =>
+  request('/workers', { method: 'POST', body: JSON.stringify(data) }).then(r => { clearCache(); return r; });
+export const updateWorker = (id, data) =>
+  request(`/workers/${id}`, { method: 'PUT', body: JSON.stringify(data) }).then(r => { clearCache(); return r; });
+export const toggleWorkerActive = (id) =>
+  request(`/workers/${id}/toggle-active`, { method: 'PATCH' }).then(r => { clearCache(); return r; });
+export const deleteWorker = (id) =>
+  request(`/workers/${id}`, { method: 'DELETE' }).then(r => { clearCache(); return r; });
 
 // Family
 export const getFamily = (workerId) => request(`/workers/${workerId}/family`);
@@ -54,17 +79,21 @@ export const deleteFamilyMember = (workerId, fid) =>
 // Payments
 export const getPayments = (params = {}) => {
   const q = new URLSearchParams(params).toString();
-  return request(`/payments${q ? '?' + q : ''}`);
+  return cachedRequest(`payments:${q}`, `/payments${q ? '?' + q : ''}`);
 };
 export const getPayment = (id) => request(`/payments/${id}`);
-export const createPayment = (data) => request('/payments', { method: 'POST', body: JSON.stringify(data) });
-export const deletePayment = (id) => request(`/payments/${id}`, { method: 'DELETE' });
+export const createPayment = (data) =>
+  request('/payments', { method: 'POST', body: JSON.stringify(data) }).then(r => { clearCache(); return r; });
+export const deletePayment = (id) =>
+  request(`/payments/${id}`, { method: 'DELETE' }).then(r => { clearCache(); return r; });
 
 // Reports
-export const getMonthlyReport = (month) => request(`/reports/monthly?month=${month}`);
+export const getMonthlyReport = (month) =>
+  cachedRequest(`report:${month}`, `/reports/monthly?month=${month}`);
 export const getWorkerReport = (id, month) =>
   request(`/reports/worker/${id}${month ? '?month=' + month : ''}`);
-export const getAnnualReport = (year) => request(`/reports/annual?year=${year}`);
+export const getAnnualReport = (year) =>
+  cachedRequest(`annual:${year}`, `/reports/annual?year=${year}`);
 
 // Export — token passed as query param since these use window.location.href
 export const downloadExcel = (month) => {
@@ -92,6 +121,7 @@ export async function restoreBackup(file) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Tiklashda xatolik');
+  clearCache();
   return data;
 }
 

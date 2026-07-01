@@ -151,15 +151,18 @@ export default function History() {
             <X className="w-5 h-5" />
           </button>
           {viewPhoto.map((img, i) => (
-            <div key={i} className="flex flex-col items-center gap-1" onClick={e => e.stopPropagation()}>
+            <div key={i} className="flex flex-col items-center gap-2" onClick={e => e.stopPropagation()}>
               {viewPhoto.length > 1 && (
                 <span className="text-white/60 text-xs font-medium">{img.label}</span>
               )}
-              <img
-                src={img.url}
-                alt={img.label}
-                className="max-w-full max-h-[40vh] rounded-2xl object-contain"
-              />
+              <div className="bg-white rounded-2xl p-3">
+                <img
+                  src={img.url}
+                  alt={img.label}
+                  className="max-w-full max-h-[40vh] object-contain block"
+                  style={{ maxWidth: '90vw' }}
+                />
+              </div>
             </div>
           ))}
         </div>

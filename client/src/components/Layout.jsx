@@ -14,7 +14,7 @@ const mobileNavItems = navItems.slice(0, 5);
 
 export default function Layout({ children }) {
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 flex pt-[env(safe-area-inset-top)]">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-60 bg-white border-r border-gray-100 fixed h-full z-10 shadow-sm">
         <div className="p-5 border-b border-gray-100">
@@ -53,14 +53,14 @@ export default function Layout({ children }) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 md:ml-60 pb-20 md:pb-0 min-h-screen">
+      <main className="flex-1 md:ml-60 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0 min-h-screen">
         <div className="max-w-2xl mx-auto px-4 py-4 md:py-6 page-enter">
           {children}
         </div>
       </main>
 
-      {/* Mobile bottom nav — 4 main items, Settings in header */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex md:hidden z-50 shadow-lg">
+      {/* Mobile bottom nav — 5 main items, Settings in header */}
+      <nav className="bottom-nav fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex md:hidden z-50 shadow-lg">
         {mobileNavItems.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}

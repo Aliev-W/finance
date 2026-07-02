@@ -260,6 +260,8 @@ function DebtRow({ debt: p, onDelete, onChanged }) {
   const [deleteRepayId, setDeleteRepayId] = useState(null);
 
   const remaining = Number(p.remaining ?? p.amount);
+  const originalAmount = Number(p.amount);
+  const hasPartialRepayment = remaining > 0.01 && remaining < originalAmount - 0.01;
 
   const loadHistory = async () => {
     setLoadingHistory(true);
@@ -318,7 +320,12 @@ function DebtRow({ debt: p, onDelete, onChanged }) {
             {formatDateShort(p.paid_at)}
           </button>
         </div>
-        <p className="font-bold text-gray-900 text-sm flex-shrink-0">{formatMoney(remaining, p.currency)}</p>
+        <div className="text-right flex-shrink-0">
+          <p className="font-bold text-gray-900 text-sm leading-tight">{formatMoney(remaining, p.currency)}</p>
+          {hasPartialRepayment && (
+            <p className="text-[11px] text-gray-400 leading-tight">{formatMoney(originalAmount, p.currency)} dan</p>
+          )}
+        </div>
         <button
           type="button"
           onClick={() => { setShowRepayForm(s => !s); setRepayError(null); }}

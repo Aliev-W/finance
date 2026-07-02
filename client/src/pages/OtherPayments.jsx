@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Plus, X, Loader2, AlertCircle, Wallet, Trash2, Calendar, ChevronDown, CheckCircle, Landmark
+  Plus, X, Loader2, AlertCircle, Wallet, Trash2, Calendar, CheckCircle
 } from 'lucide-react';
 import {
   getOtherPayments, getOtherPaymentsSummary, createOtherPayment, deleteOtherPayment, getWorkers,
@@ -135,15 +135,15 @@ export default function OtherPayments() {
       {/* Debts overview — simple, always visible, all-time */}
       {!debtsLoading && debts.length > 0 && (
         <div className="card">
-          <div className="flex items-center gap-2 mb-2">
-            <Landmark className="w-4 h-4 text-indigo-600 flex-shrink-0" />
-            <span className="font-semibold text-gray-800 text-sm">Qarzdorlarim</span>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm font-semibold text-gray-500">Qarzdorlarim</span>
+            <span className="text-xs text-gray-400">{debts.length} kishi</span>
           </div>
-          <div className="flex gap-3 flex-wrap mb-3">
-            {debtTotals.UZS > 0 && <span className="text-2xl font-bold text-gray-900">{formatMoney(debtTotals.UZS, 'UZS')}</span>}
-            {debtTotals.USD > 0 && <span className="text-2xl font-bold text-gray-900">{formatMoney(debtTotals.USD, 'USD')}</span>}
+          <div className="flex items-baseline gap-3 flex-wrap mb-1">
+            {debtTotals.UZS > 0 && <span className="text-3xl font-bold text-gray-900 leading-tight">{formatMoney(debtTotals.UZS, 'UZS')}</span>}
+            {debtTotals.USD > 0 && <span className="text-3xl font-bold text-gray-900 leading-tight">{formatMoney(debtTotals.USD, 'USD')}</span>}
           </div>
-          <div className="space-y-2">
+          <div className="divide-y divide-gray-100 mt-3">
             {debts.map(d => (
               <DebtRow key={d.id} debt={d} onDelete={() => setDeleteId(d.id)} onChanged={loadAll} />
             ))}
@@ -240,24 +240,27 @@ export default function OtherPayments() {
         </form>
       )}
 
-      {/* Month filter */}
-      <select
-        value={month}
-        onChange={e => setMonth(e.target.value)}
-        className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-      >
-        {MONTHS_LIST().map(m => (
-          <option key={m.value} value={m.value}>{m.label}</option>
-        ))}
-      </select>
+      {/* Monthly expenses — separate section from the debt tracker above */}
+      <div className="pt-1">
+        <p className="text-sm font-semibold text-gray-500 mb-2">Oylik xarajatlar</p>
+        <select
+          value={month}
+          onChange={e => setMonth(e.target.value)}
+          className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          {MONTHS_LIST().map(m => (
+            <option key={m.value} value={m.value}>{m.label}</option>
+          ))}
+        </select>
+      </div>
 
       {/* Summary */}
       {!loading && summary && (summary.total_uzs > 0 || summary.total_usd > 0) && (
-        <div className="card bg-gradient-to-r from-indigo-600 to-indigo-500 text-white">
-          <p className="text-sm text-indigo-100 mb-2">Jami to'langan · {summary.count} ta to'lov</p>
-          <div className="space-y-1">
-            {summary.total_uzs > 0 && <p className="text-xl font-bold">{formatMoney(summary.total_uzs, 'UZS')}</p>}
-            {summary.total_usd > 0 && <p className="text-xl font-bold">{formatMoney(summary.total_usd, 'USD')}</p>}
+        <div className="card flex items-center justify-between">
+          <span className="text-sm text-gray-500">{summary.count} ta to'lov</span>
+          <div className="flex gap-3">
+            {summary.total_uzs > 0 && <span className="font-bold text-gray-900">{formatMoney(summary.total_uzs, 'UZS')}</span>}
+            {summary.total_usd > 0 && <span className="font-bold text-gray-900">{formatMoney(summary.total_usd, 'USD')}</span>}
           </div>
         </div>
       )}
@@ -276,13 +279,14 @@ export default function OtherPayments() {
       )}
 
       {!loading && visiblePayments.length === 0 && (
-        <div className="card text-center py-12">
-          <Wallet className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-          <p className="font-semibold text-gray-500">To'lovlar yo'q</p>
-          <p className="text-sm text-gray-400 mt-1">
-            {payments.length > 0 ? "Ushbu oydagi qarzlar yuqorida, Qarzdorlarim bo'limida" : 'Bu oy uchun boshqa to\'lov topilmadi'}
-          </p>
-        </div>
+        payments.length > 0 ? (
+          <p className="text-sm text-gray-400 text-center py-2">Ushbu oydagi qarzlar yuqorida, Qarzdorlarim bo'limida</p>
+        ) : (
+          <div className="card text-center py-10">
+            <Wallet className="w-10 h-10 text-gray-200 mx-auto mb-2" />
+            <p className="text-sm text-gray-400">Bu oy uchun boshqa to'lov topilmadi</p>
+          </div>
+        )
       )}
 
       {!loading && visiblePayments.length > 0 && (
@@ -369,9 +373,9 @@ function DebtRow({ debt: p, onDelete, onChanged }) {
   };
 
   return (
-    <div className="bg-gray-50 rounded-xl p-3">
+    <div className="py-3 first:pt-0 last:pb-0">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-700 font-bold flex-shrink-0 text-sm">
+        <div className="w-9 h-9 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 font-bold flex-shrink-0 text-sm">
           {p.recipient_name.charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
@@ -380,20 +384,18 @@ function DebtRow({ debt: p, onDelete, onChanged }) {
             {formatDateShort(p.paid_at)}
           </button>
         </div>
-        <div className="text-right flex-shrink-0">
-          <p className="font-bold text-gray-900 text-sm">{formatMoney(remaining, p.currency)}</p>
-          <button
-            type="button"
-            onClick={() => { setShowRepayForm(s => !s); setRepayError(null); }}
-            className="text-xs text-blue-600 font-semibold mt-1"
-          >
-            + Qaytarish
-          </button>
-        </div>
+        <p className="font-bold text-gray-900 text-sm flex-shrink-0">{formatMoney(remaining, p.currency)}</p>
+        <button
+          type="button"
+          onClick={() => { setShowRepayForm(s => !s); setRepayError(null); }}
+          className="text-xs text-blue-600 font-semibold bg-blue-50 px-3 py-1.5 rounded-lg flex-shrink-0"
+        >
+          Qaytarish
+        </button>
       </div>
 
       {showRepayForm && (
-        <form onSubmit={handleRepay} className="mt-3 flex flex-col gap-2">
+        <form onSubmit={handleRepay} className="mt-3 flex flex-col gap-2 pl-12">
           {repayError && <p className="text-xs text-red-600">{repayError}</p>}
           <div className="flex gap-2">
             <input
@@ -414,7 +416,7 @@ function DebtRow({ debt: p, onDelete, onChanged }) {
       )}
 
       {showHistory && (
-        <div className="mt-3 pt-3 border-t border-gray-200 space-y-1.5">
+        <div className="mt-3 ml-12 pl-3 border-l-2 border-gray-100 space-y-1.5">
           <p className="text-xs text-gray-400">Berilgan: {formatMoney(p.amount, p.currency)}{p.notes ? ` · ${p.notes}` : ''}</p>
           {loadingHistory ? (
             <div className="flex justify-center py-2"><Loader2 className="w-4 h-4 text-blue-500 animate-spin" /></div>

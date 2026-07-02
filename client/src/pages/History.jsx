@@ -163,7 +163,7 @@ export default function History() {
       {/* Photo viewer */}
       {viewPhoto && (
         <div
-          className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 gap-4"
+          className="fixed inset-0 bg-black/90 z-[60] flex flex-col items-center justify-center p-4 gap-4"
           onClick={() => setViewPhoto(null)}
         >
           <button

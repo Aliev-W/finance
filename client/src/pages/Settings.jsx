@@ -218,7 +218,7 @@ export default function Settings() {
 
       {/* PIN Modal */}
       {pinModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closePin} />
           <div className="relative bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6">
             <h2 className="font-bold text-gray-900 text-lg mb-1">

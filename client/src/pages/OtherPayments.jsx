@@ -19,6 +19,7 @@ const emptyForm = () => ({
 export default function OtherPayments() {
   const [workers, setWorkers] = useState([]);
   const [deleteId, setDeleteId] = useState(null);
+  const [error, setError] = useState(null);
 
   const [debts, setDebts] = useState([]);
   const [debtTotals, setDebtTotals] = useState({});
@@ -36,8 +37,9 @@ export default function OtherPayments() {
       const d = await getDebtsSummary();
       setDebts(d.debts);
       setDebtTotals(d.totals);
+      setError(null);
     } catch (e) {
-      // non-critical section, fail silently
+      setError("Qarzlar ro'yxatini yuklab bo'lmadi. Internetni tekshirib, qayta urinib ko'ring.");
     } finally {
       setDebtsLoading(false);
     }
@@ -79,7 +81,7 @@ export default function OtherPayments() {
       await deleteOtherPayment(id);
       loadDebts();
     } catch (e) {
-      // surfaced nowhere critical — debts list will just retry on next load
+      setError("O'chirib bo'lmadi: " + e.message);
     }
   };
 
@@ -184,13 +186,20 @@ export default function OtherPayments() {
         </form>
       )}
 
+      {error && (
+        <div className="card flex items-center gap-3 text-red-600 bg-red-50 border-red-100">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <span className="text-sm">{error}</span>
+        </div>
+      )}
+
       {debtsLoading && (
         <div className="flex justify-center py-12">
           <Loader2 className="w-7 h-7 text-blue-500 animate-spin" />
         </div>
       )}
 
-      {!debtsLoading && debts.length === 0 && (
+      {!debtsLoading && !error && debts.length === 0 && (
         <div className="card text-center py-10">
           <HandCoins className="w-10 h-10 text-gray-200 mx-auto mb-2" />
           <p className="text-sm text-gray-400">Hali qarzdorlar yo'q</p>
@@ -341,7 +350,13 @@ function DebtRow({ debt: p, onDelete, onChanged }) {
         </div>
         <button
           type="button"
-          onClick={() => { setShowRepayForm(s => !s); setRepayError(null); }}
+          onClick={() => {
+            setShowRepayForm(s => !s);
+            setRepayError(null);
+            setRepayAmount('');
+            setRepayCurrency(p.currency);
+            setRepayEquivalent('');
+          }}
           className="text-xs text-blue-600 font-semibold bg-blue-50 px-3 py-1.5 rounded-lg flex-shrink-0"
         >
           Qaytarish

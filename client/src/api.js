@@ -151,7 +151,9 @@ export const openPrintReport = (month) => {
   if (!w) window.location.href = url;
 };
 export const openPaymentReceipt = (id) => {
-  window.open(`/api/export/payment/${id}?token=${getToken()}`, '_blank');
+  const url = `/api/export/payment/${id}?token=${getToken()}`;
+  const w = window.open(url, '_blank');
+  if (!w) window.location.href = url;
 };
 
 // Backup

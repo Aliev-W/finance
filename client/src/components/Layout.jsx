@@ -1,12 +1,12 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, CircleDollarSign, History, Wallet, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, CircleDollarSign, History, HandCoins, Settings } from 'lucide-react';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Bosh sahifa' },
   { to: '/workers', icon: Users, label: 'Ishchilar' },
   { to: '/pay', icon: CircleDollarSign, label: "To'lash" },
   { to: '/history', icon: History, label: 'Tarix' },
-  { to: '/other-payments', icon: Wallet, label: 'Boshqa' },
+  { to: '/other-payments', icon: HandCoins, label: 'Qarzlar' },
   { to: '/settings', icon: Settings, label: 'Sozlamalar' },
 ];
 

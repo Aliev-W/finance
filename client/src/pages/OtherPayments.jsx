@@ -311,15 +311,15 @@ function DebtRow({ debt: p, onDelete, onChanged }) {
   return (
     <div className="py-3 first:pt-0 last:pb-0">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 font-bold flex-shrink-0 text-sm">
-          {p.recipient_name.charAt(0).toUpperCase()}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-gray-900 text-sm truncate">{p.recipient_name}</p>
-          <button type="button" onClick={toggleHistory} className="text-xs text-gray-400">
-            {formatDateShort(p.paid_at)}
-          </button>
-        </div>
+        <button type="button" onClick={toggleHistory} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+          <div className="w-9 h-9 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 font-bold flex-shrink-0 text-sm">
+            {p.recipient_name.charAt(0).toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-gray-900 text-sm truncate">{p.recipient_name}</p>
+            <p className="text-xs text-gray-400">{formatDateShort(p.paid_at)}</p>
+          </div>
+        </button>
         <div className="text-right flex-shrink-0">
           <p className="font-bold text-gray-900 text-sm leading-tight">{formatMoney(remaining, p.currency)}</p>
           {hasPartialRepayment && (
@@ -357,8 +357,15 @@ function DebtRow({ debt: p, onDelete, onChanged }) {
       )}
 
       {showHistory && (
-        <div className="mt-3 ml-12 pl-3 border-l-2 border-gray-100 space-y-1.5">
-          <p className="text-xs text-gray-400">Berilgan: {formatMoney(p.amount, p.currency)}{p.notes ? ` · ${p.notes}` : ''}</p>
+        <div className="mt-3 ml-12 pl-3 border-l-2 border-gray-100 space-y-2.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-gray-600">
+              <span className="text-gray-400">Qarz berildi</span> · {formatDateShort(p.paid_at)}
+            </span>
+            <span className="font-semibold text-gray-700">{formatMoney(originalAmount, p.currency)}</span>
+          </div>
+          {p.notes && <p className="text-xs text-gray-400 -mt-1.5">{p.notes}</p>}
+
           {loadingHistory ? (
             <div className="flex justify-center py-2"><Loader2 className="w-4 h-4 text-blue-500 animate-spin" /></div>
           ) : repayments.length === 0 ? (
@@ -366,10 +373,15 @@ function DebtRow({ debt: p, onDelete, onChanged }) {
           ) : (
             repayments.map(r => (
               <div key={r.id} className="flex items-center justify-between text-xs">
-                <span className="text-gray-600">{formatDateShort(r.paid_at)} — {formatMoney(r.amount, p.currency)}</span>
-                <button onClick={() => setDeleteRepayId(r.id)} className="text-red-400 flex-shrink-0">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                <span className="text-gray-600">
+                  <span className="text-green-600">Qaytardi</span> · {formatDateShort(r.paid_at)}
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-green-700">{formatMoney(r.amount, p.currency)}</span>
+                  <button onClick={() => setDeleteRepayId(r.id)} className="text-red-400 flex-shrink-0">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             ))
           )}

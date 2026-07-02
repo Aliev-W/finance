@@ -400,16 +400,24 @@ function OtherPaymentCard({ p, onDelete, onChanged }) {
                   <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {repayError}
                 </p>
               )}
+              <p className="text-xs text-gray-400">
+                Qaytarilayotgan miqdor <span className="font-semibold text-gray-600">({p.currency === 'USD' ? 'dollarda' : "so'mda"})</span> · Max {formatMoney(remaining, p.currency)}
+              </p>
               <div className="flex gap-2">
-                <input
-                  type="number"
-                  min="0"
-                  step="any"
-                  value={repayAmount}
-                  onChange={e => setRepayAmount(e.target.value)}
-                  placeholder={`Max ${remaining}`}
-                  className="input-field flex-1 py-2 text-sm"
-                />
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={repayAmount}
+                    onChange={e => setRepayAmount(e.target.value)}
+                    placeholder="0"
+                    className="input-field py-2 text-sm pr-14"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold pointer-events-none">
+                    {p.currency === 'USD' ? '$' : "so'm"}
+                  </span>
+                </div>
                 <input
                   type="date"
                   value={repayDate}

@@ -114,6 +114,11 @@ export default function OtherPayments() {
     }
   };
 
+  // Unsettled Qarz entries are already shown in the Qarzdorlik overview above —
+  // hide them here to avoid showing the same loan twice when its month matches the filter.
+  const unsettledDebtIds = new Set(debts.map(d => d.id));
+  const visiblePayments = payments.filter(p => !(p.category === 'Qarz' && unsettledDebtIds.has(p.id)));
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -282,17 +287,19 @@ export default function OtherPayments() {
         </div>
       )}
 
-      {!loading && payments.length === 0 && (
+      {!loading && visiblePayments.length === 0 && (
         <div className="card text-center py-12">
           <Wallet className="w-12 h-12 text-gray-200 mx-auto mb-3" />
           <p className="font-semibold text-gray-500">To'lovlar yo'q</p>
-          <p className="text-sm text-gray-400 mt-1">Bu oy uchun boshqa to'lov topilmadi</p>
+          <p className="text-sm text-gray-400 mt-1">
+            {payments.length > 0 ? "Ushbu oydagi qarzlar yuqorida, Qarzdorlik bo'limida" : 'Bu oy uchun boshqa to\'lov topilmadi'}
+          </p>
         </div>
       )}
 
-      {!loading && payments.length > 0 && (
+      {!loading && visiblePayments.length > 0 && (
         <div className="space-y-2">
-          {payments.map(p => (
+          {visiblePayments.map(p => (
             <OtherPaymentCard
               key={p.id}
               p={p}

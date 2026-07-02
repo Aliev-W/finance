@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Filter, Image, Trash2, Loader2, AlertCircle, Receipt, X, ChevronDown,
-  User, MessageSquare, Clock, Banknote
+  User, MessageSquare, Clock, Banknote, Search
 } from 'lucide-react';
 import { getPayments, getWorkers, deletePayment } from '../api';
 import { formatMoney, formatDate, currentMonth, MONTHS_LIST, monthLabel } from '../utils';
@@ -17,6 +17,7 @@ export default function History() {
 
   const [month, setMonth] = useState(searchParams.get('month') || currentMonth());
   const [workerId, setWorkerId] = useState('');
+  const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState(null);
 
   const [viewPhoto, setViewPhoto] = useState(null); // { url, label }[]
@@ -25,7 +26,7 @@ export default function History() {
     setLoading(true);
     setError(null);
     try {
-      const params = { month };
+      const params = month === 'all' ? { limit: 1000 } : { month };
       if (workerId) params.worker_id = workerId;
       const [data, wlist] = await Promise.all([
         getPayments(params),
@@ -51,14 +52,22 @@ export default function History() {
     }
   };
 
-  const totalUZS = payments.filter(p => p.currency === 'UZS').reduce((s, p) => s + p.amount, 0);
-  const totalUSD = payments.filter(p => p.currency === 'USD').reduce((s, p) => s + p.amount, 0);
+  const filteredPayments = payments.filter(p => {
+    if (!search.trim()) return true;
+    const q = search.trim().toLowerCase();
+    return (p.worker_name || '').toLowerCase().includes(q) ||
+      (p.receiver_name || '').toLowerCase().includes(q) ||
+      (p.notes || '').toLowerCase().includes(q);
+  });
+
+  const totalUZS = filteredPayments.filter(p => p.currency === 'UZS').reduce((s, p) => s + p.amount, 0);
+  const totalUSD = filteredPayments.filter(p => p.currency === 'USD').reduce((s, p) => s + p.amount, 0);
 
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-xl font-bold text-gray-900">To'lovlar tarixi</h1>
-        <p className="text-sm text-gray-500">{monthLabel(month)}</p>
+        <p className="text-sm text-gray-500">{month === 'all' ? 'Umumiy — barcha vaqt' : monthLabel(month)}</p>
       </div>
 
       {/* Filters */}
@@ -68,6 +77,7 @@ export default function History() {
           onChange={e => setMonth(e.target.value)}
           className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
+          <option value="all">Umumiy (barcha vaqt)</option>
           {MONTHS_LIST().map(m => (
             <option key={m.value} value={m.value}>{m.label}</option>
           ))}
@@ -84,10 +94,22 @@ export default function History() {
         </select>
       </div>
 
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Ishchi, qabul qiluvchi yoki izoh bo'yicha qidirish..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="input-field pl-11"
+        />
+      </div>
+
       {/* Summary */}
-      {!loading && payments.length > 0 && (
+      {!loading && filteredPayments.length > 0 && (
         <div className="card bg-gradient-to-r from-blue-600 to-blue-500 text-white">
-          <p className="text-sm text-blue-100 mb-2">Jami to'langan · {payments.length} ta to'lov</p>
+          <p className="text-sm text-blue-100 mb-2">Jami to'langan · {filteredPayments.length} ta to'lov</p>
           <div className="space-y-1">
             {totalUZS > 0 && <p className="text-xl font-bold">{formatMoney(totalUZS, 'UZS')}</p>}
             {totalUSD > 0 && <p className="text-xl font-bold">{formatMoney(totalUSD, 'USD')}</p>}
@@ -108,17 +130,21 @@ export default function History() {
         </div>
       )}
 
-      {!loading && payments.length === 0 && (
+      {!loading && filteredPayments.length === 0 && (
         <div className="card text-center py-12">
           <Receipt className="w-12 h-12 text-gray-200 mx-auto mb-3" />
           <p className="font-semibold text-gray-500">To'lovlar yo'q</p>
-          <p className="text-sm text-gray-400 mt-1">Bu oy uchun to'lovlar topilmadi</p>
+          <p className="text-sm text-gray-400 mt-1">
+            {search.trim() && payments.length > 0
+              ? "Qidiruv bo'yicha hech narsa topilmadi"
+              : month === 'all' ? 'Hali to\'lovlar yo\'q' : "Bu oy uchun to'lovlar topilmadi"}
+          </p>
         </div>
       )}
 
-      {!loading && payments.length > 0 && (
+      {!loading && filteredPayments.length > 0 && (
         <div className="space-y-3">
-          {payments.map(p => (
+          {filteredPayments.map(p => (
             <PaymentCard
               key={p.id}
               payment={p}

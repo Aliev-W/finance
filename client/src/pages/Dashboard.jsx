@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ChevronLeft, ChevronRight, Users, TrendingUp,
-  DollarSign, Banknote, AlertCircle, Loader2, RefreshCw,
+  AlertCircle, Loader2, RefreshCw,
   ArrowRight, Phone, X, FileSpreadsheet, Printer, Bell, Settings, AlertTriangle
 } from 'lucide-react';
 import { getMonthlyReport, downloadExcel, openPrintReport, getDebtsSummary } from '../api';
@@ -178,6 +178,20 @@ export default function Dashboard() {
               <StatCard dotColor="bg-amber-400" value={data.paid_partial}  label="Qisman to'landi" border="border-r border-gray-50" onClick={() => openModal('partial')} />
               <StatCard dotColor="bg-red-400"   value={data.unpaid}        label="To'lanmagan"     border="" onClick={() => openModal('unpaid')} />
             </div>
+
+            {/* Jami to'langan — merged in, no separate card */}
+            {(data.total_uzs > 0 || data.total_usd > 0) && (
+              <div className="px-4 py-2.5 border-t border-gray-50 flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <TrendingUp className="w-3.5 h-3.5 text-gray-400" />
+                  <span className="text-xs text-gray-500 font-medium">Jami to'langan</span>
+                </div>
+                <div className="flex gap-3">
+                  {data.total_uzs > 0 && <span className="font-bold text-gray-900 text-sm">{formatMoney(data.total_uzs, 'UZS')}</span>}
+                  {data.total_usd > 0 && <span className="font-bold text-gray-900 text-sm">{formatMoney(data.total_usd, 'USD')}</span>}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Export buttons */}
@@ -204,34 +218,6 @@ export default function Dashboard() {
             <div className="flex items-center gap-3 text-red-600 bg-red-50 border border-red-100 rounded-2xl p-4">
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
               <span className="text-sm">{exportError}</span>
-            </div>
-          )}
-
-          {/* Money Summary */}
-          {(data.total_uzs > 0 || data.total_usd > 0) && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp className="w-4 h-4 text-gray-400" />
-                <span className="font-semibold text-gray-600 text-sm">Jami to'langan</span>
-              </div>
-              <div className="space-y-2.5">
-                {data.total_uzs > 0 && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-gray-400">
-                      <Banknote className="w-4 h-4" /> So'm
-                    </div>
-                    <span className="font-bold text-gray-900 text-base">{formatMoney(data.total_uzs, 'UZS')}</span>
-                  </div>
-                )}
-                {data.total_usd > 0 && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-gray-400">
-                      <DollarSign className="w-4 h-4" /> Dollar
-                    </div>
-                    <span className="font-bold text-gray-900 text-base">{formatMoney(data.total_usd, 'USD')}</span>
-                  </div>
-                )}
-              </div>
             </div>
           )}
 

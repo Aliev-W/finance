@@ -21,6 +21,8 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [modal, setModal] = useState(null);
   const [overdueDebts, setOverdueDebts] = useState({ count: 0, totals: {} });
+  const [exportingExcel, setExportingExcel] = useState(false);
+  const [exportError, setExportError] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -45,6 +47,18 @@ export default function Dashboard() {
       setOverdueDebts({ count: overdue.length, totals });
     }).catch(() => {});
   }, []);
+
+  const handleDownloadExcel = async () => {
+    setExportingExcel(true);
+    setExportError(null);
+    try {
+      await downloadExcel(month);
+    } catch (e) {
+      setExportError(e.message);
+    } finally {
+      setExportingExcel(false);
+    }
+  };
 
   const canGoNext = month < currentMonth();
 
@@ -175,12 +189,23 @@ export default function Dashboard() {
               <Printer className="w-4 h-4 text-gray-500" /> Chop etish
             </button>
             <button
-              onClick={() => downloadExcel(month)}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 bg-white rounded-xl border border-gray-100 shadow-sm text-sm font-medium text-gray-600 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+              onClick={handleDownloadExcel}
+              disabled={exportingExcel}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 bg-white rounded-xl border border-gray-100 shadow-sm text-sm font-medium text-gray-600 hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-60"
             >
-              <FileSpreadsheet className="w-4 h-4 text-green-600" /> Excel
+              {exportingExcel
+                ? <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
+                : <FileSpreadsheet className="w-4 h-4 text-green-600" />}
+              Excel
             </button>
           </div>
+
+          {exportError && (
+            <div className="flex items-center gap-3 text-red-600 bg-red-50 border border-red-100 rounded-2xl p-4">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <span className="text-sm">{exportError}</span>
+            </div>
+          )}
 
           {/* Money Summary */}
           {(data.total_uzs > 0 || data.total_usd > 0) && (

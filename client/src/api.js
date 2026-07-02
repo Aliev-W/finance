@@ -117,10 +117,34 @@ export const getWorkerReport = (id, month) =>
 export const getAnnualReport = (year) =>
   cachedRequest(`annual:${year}`, `/reports/annual?year=${year}`);
 
-// Export — token passed as query param since these use window.location.href
-export const downloadExcel = (month) => {
-  window.location.href = `/api/export/excel?month=${month}&token=${getToken()}`;
-};
+// Export
+export async function downloadExcel(month) {
+  const token = getToken();
+  const res = await fetch(`/api/export/excel?month=${month}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Excel faylini yuklab bo\'lmadi' }));
+    throw new Error(err.error || 'Excel faylini yuklab bo\'lmadi');
+  }
+  const blob = await res.blob();
+
+  let filename = `oylik_${month}.xlsx`;
+  const disposition = res.headers.get('Content-Disposition');
+  if (disposition) {
+    const match = disposition.match(/filename\*?=(?:UTF-8''|")?([^";]+)"?/i);
+    if (match) filename = decodeURIComponent(match[1]);
+  }
+
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+}
 export const openPrintReport = (month) => {
   const url = `/api/export/print?month=${month}&token=${getToken()}`;
   const w = window.open(url, '_blank');

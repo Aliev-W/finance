@@ -3,9 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ChevronLeft, ChevronRight, Users, TrendingUp,
   DollarSign, Banknote, AlertCircle, Loader2, RefreshCw,
-  ArrowRight, Phone, X, FileSpreadsheet, Printer, Bell, Settings
+  ArrowRight, Phone, X, FileSpreadsheet, Printer, Bell, Settings, AlertTriangle
 } from 'lucide-react';
-import { getMonthlyReport, downloadExcel, openPrintReport } from '../api';
+import { getMonthlyReport, downloadExcel, openPrintReport, getDebtsSummary } from '../api';
 import { currentMonth, monthLabel, prevMonth, nextMonth, formatMoney, formatDate } from '../utils';
 
 export default function Dashboard() {
@@ -20,6 +20,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [modal, setModal] = useState(null);
+  const [overdueDebts, setOverdueDebts] = useState({ count: 0, totals: {} });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -35,6 +36,15 @@ export default function Dashboard() {
   }, [month]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    getDebtsSummary().then(d => {
+      const overdue = d.debts.filter(x => x.is_overdue);
+      const totals = {};
+      overdue.forEach(x => { totals[x.currency] = (totals[x.currency] || 0) + x.remaining; });
+      setOverdueDebts({ count: overdue.length, totals });
+    }).catch(() => {});
+  }, []);
 
   const canGoNext = month < currentMonth();
 
@@ -83,6 +93,23 @@ export default function Dashboard() {
             <p className="text-xs text-amber-600 mt-0.5">{data.unpaid} ta ishchiga hali oylik berilmagan. Oy tugashiga {daysInMonth - today.getDate()} kun qoldi.</p>
           </div>
         </div>
+      )}
+
+      {/* Overdue debts warning */}
+      {overdueDebts.count > 0 && (
+        <button
+          onClick={() => navigate('/other-payments')}
+          className="w-full flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl p-4 text-left hover:bg-red-100 transition-colors"
+        >
+          <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-red-800 text-sm">{overdueDebts.count} ta qarz 30+ kundan beri qaytarilmagan</p>
+            <p className="text-xs text-red-600 mt-0.5">
+              {Object.entries(overdueDebts.totals).map(([cur, amt]) => formatMoney(amt, cur)).join(' + ')}
+            </p>
+          </div>
+          <ArrowRight className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+        </button>
       )}
 
       {/* Month Selector */}

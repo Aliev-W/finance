@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Edit, Phone, UserX, UserCheck,
-  CircleDollarSign, ChevronLeft, ChevronRight, Loader2, CheckCircle, Clock, XCircle, FileText
+  CircleDollarSign, ChevronLeft, ChevronRight, Loader2, CheckCircle, Clock, XCircle, FileText,
+  Wallet, AlertTriangle
 } from 'lucide-react';
-import { getWorker, getWorkerReport, toggleWorkerActive, openPaymentReceipt } from '../api';
-import { formatMoney, formatDate, monthLabel, currentMonth, prevMonth, nextMonth } from '../utils';
+import { getWorker, getWorkerReport, toggleWorkerActive, openPaymentReceipt, getOtherPayments } from '../api';
+import { formatMoney, formatDate, formatDateShort, monthLabel, currentMonth, prevMonth, nextMonth } from '../utils';
 import { ConfirmModal } from '../components/Modal';
 
 export default function WorkerDetail() {
@@ -18,6 +19,9 @@ export default function WorkerDetail() {
   const [selectedMonth, setSelectedMonth] = useState(currentMonth());
   const [showToggleConfirm, setShowToggleConfirm] = useState(false);
   const [toggling, setToggling] = useState(false);
+
+  const [otherPayments, setOtherPayments] = useState([]);
+  const [otherLoading, setOtherLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -35,7 +39,19 @@ export default function WorkerDetail() {
     }
   }, [id, selectedMonth, navigate]);
 
+  const loadOther = useCallback(async () => {
+    setOtherLoading(true);
+    try {
+      setOtherPayments(await getOtherPayments({ worker_id: id }));
+    } catch (e) {
+      // non-critical section, fail silently
+    } finally {
+      setOtherLoading(false);
+    }
+  }, [id]);
+
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { loadOther(); }, [loadOther]);
 
   const handleToggleActive = async () => {
     setToggling(true);
@@ -284,6 +300,50 @@ export default function WorkerDetail() {
           </div>
         )}
       </div>
+
+      {/* Other payments (bonus/loan/etc) — unified view outside salary */}
+      {!otherLoading && otherPayments.length > 0 && (
+        <div className="card">
+          <h3 className="font-semibold text-gray-700 text-sm mb-3 flex items-center gap-2">
+            <Wallet className="w-4 h-4 text-indigo-500" /> Boshqa to'lovlar
+          </h3>
+          <div className="space-y-2">
+            {otherPayments.map(p => {
+              const isLoan = p.category === 'Qarz';
+              const remaining = Number(p.remaining ?? p.amount);
+              const isSettled = isLoan && remaining <= 0.01;
+              return (
+                <div key={p.id} className={`bg-gray-50 rounded-xl p-3 ${p.is_overdue ? 'border border-red-200 bg-red-50' : ''}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs bg-white border border-gray-200 text-gray-500 px-2 py-0.5 rounded-full flex-shrink-0">{p.category}</span>
+                      <span className="text-xs text-gray-400 truncate">{formatDateShort(p.paid_at)}</span>
+                    </div>
+                    <span className="font-bold text-gray-900 text-sm flex-shrink-0">{formatMoney(p.amount, p.currency)}</span>
+                  </div>
+                  {isLoan && (
+                    <div className="mt-1.5 flex items-center justify-between flex-wrap gap-1">
+                      {isSettled ? (
+                        <span className="text-xs text-green-600 font-semibold flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" /> Qaytarildi
+                        </span>
+                      ) : (
+                        <span className="text-xs text-amber-600 font-semibold">Qoldi: {formatMoney(remaining, p.currency)}</span>
+                      )}
+                      {p.is_overdue && (
+                        <span className="text-xs text-red-600 font-semibold flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" /> {p.days_old} kun kechikdi
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {p.notes && <p className="text-xs text-gray-400 mt-1 truncate">{p.notes}</p>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <ConfirmModal
         open={showToggleConfirm}

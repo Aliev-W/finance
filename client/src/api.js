@@ -94,6 +94,8 @@ export const getOtherPayments = (params = {}) => {
 };
 export const getOtherPaymentsSummary = (month) =>
   request(`/other-payments/summary?month=${month}`);
+export const getDebtsSummary = () =>
+  request('/other-payments/debts');
 export const createOtherPayment = (data) =>
   request('/other-payments', { method: 'POST', body: JSON.stringify(data) }).then(r => { clearCache(); return r; });
 export const deleteOtherPayment = (id) =>

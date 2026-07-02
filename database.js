@@ -50,6 +50,7 @@ async function initDB() {
       amount REAL NOT NULL,
       currency TEXT NOT NULL DEFAULT 'UZS',
       category TEXT DEFAULT 'Boshqa',
+      interest_rate REAL DEFAULT 0,
       notes TEXT DEFAULT '',
       paid_at TEXT DEFAULT (datetime('now'))
     )`,
@@ -68,6 +69,10 @@ async function initDB() {
 
   try {
     await client.execute("ALTER TABLE workers ADD COLUMN hire_date TEXT DEFAULT ''");
+  } catch (e) {}
+
+  try {
+    await client.execute("ALTER TABLE other_payments ADD COLUMN interest_rate REAL DEFAULT 0");
   } catch (e) {}
 
   return client;

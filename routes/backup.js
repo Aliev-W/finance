@@ -77,8 +77,8 @@ router.post('/restore', upload.single('backup'), async (req, res) => {
 
     for (const op of (data.other_payments || [])) {
       statements.push({
-        sql: `INSERT INTO other_payments (id, recipient_name, worker_id, amount, currency, category, notes, paid_at) VALUES (?,?,?,?,?,?,?,?)`,
-        args: [op.id, op.recipient_name, op.worker_id||null, op.amount, op.currency||'UZS', op.category||'Boshqa', op.notes||'', op.paid_at||new Date().toISOString()]
+        sql: `INSERT INTO other_payments (id, recipient_name, worker_id, amount, currency, category, interest_rate, notes, paid_at) VALUES (?,?,?,?,?,?,?,?,?)`,
+        args: [op.id, op.recipient_name, op.worker_id||null, op.amount, op.currency||'UZS', op.category||'Boshqa', op.interest_rate||0, op.notes||'', op.paid_at||new Date().toISOString()]
       });
     }
 

@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Plus, X, Loader2, AlertCircle, Wallet, Trash2, Calendar, ChevronDown, CheckCircle
+  Plus, X, Loader2, AlertCircle, AlertTriangle, Wallet, Trash2, Calendar, ChevronDown, CheckCircle, Landmark
 } from 'lucide-react';
 import {
   getOtherPayments, getOtherPaymentsSummary, createOtherPayment, deleteOtherPayment, getWorkers,
-  getLoanRepayments, addLoanRepayment, deleteLoanRepayment
+  getLoanRepayments, addLoanRepayment, deleteLoanRepayment, getDebtsSummary
 } from '../api';
 import { formatMoney, formatDateShort, currentMonth, MONTHS_LIST, OTHER_PAYMENT_CATEGORIES } from '../utils';
 import { ConfirmModal } from '../components/Modal';
@@ -16,7 +16,7 @@ function todayStr() {
 
 const emptyForm = () => ({
   recipient_name: '', amount: '', currency: 'UZS',
-  category: 'Boshqa', notes: '', date: todayStr()
+  category: 'Boshqa', interest_rate: '', notes: '', date: todayStr()
 });
 
 export default function OtherPayments() {
@@ -27,6 +27,11 @@ export default function OtherPayments() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
+
+  const [debts, setDebts] = useState([]);
+  const [debtTotals, setDebtTotals] = useState({});
+  const [overdueCount, setOverdueCount] = useState(0);
+  const [debtsLoading, setDebtsLoading] = useState(true);
 
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -50,7 +55,24 @@ export default function OtherPayments() {
     }
   }, [month]);
 
+  const loadDebts = useCallback(async () => {
+    setDebtsLoading(true);
+    try {
+      const d = await getDebtsSummary();
+      setDebts(d.debts);
+      setDebtTotals(d.totals);
+      setOverdueCount(d.overdue_count);
+    } catch (e) {
+      // non-critical section, fail silently
+    } finally {
+      setDebtsLoading(false);
+    }
+  }, []);
+
+  const loadAll = useCallback(() => { load(); loadDebts(); }, [load, loadDebts]);
+
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { loadDebts(); }, [loadDebts]);
   useEffect(() => { getWorkers({ active: 1 }).then(setWorkers).catch(() => {}); }, []);
 
   const handleSubmit = async (e) => {
@@ -67,12 +89,13 @@ export default function OtherPayments() {
         amount: parseFloat(form.amount),
         currency: form.currency,
         category: form.category,
+        interest_rate: form.category === 'Qarz' && form.interest_rate ? parseFloat(form.interest_rate) : 0,
         notes: form.notes,
         paid_at: paidAt
       });
       setForm(emptyForm());
       setShowForm(false);
-      load();
+      loadAll();
     } catch (e) {
       setFormError(e.message);
     } finally {
@@ -85,7 +108,7 @@ export default function OtherPayments() {
     try {
       await deleteOtherPayment(id);
       setPayments(p => p.filter(x => x.id !== id));
-      load();
+      loadAll();
     } catch (e) {
       setError(e.message);
     }
@@ -106,6 +129,17 @@ export default function OtherPayments() {
           {showForm ? <><X className="w-4 h-4" /> Bekor qilish</> : <><Plus className="w-4 h-4" /> Qo'shish</>}
         </button>
       </div>
+
+      {/* Debts overview — all-time, independent of month filter */}
+      {!debtsLoading && debts.length > 0 && (
+        <DebtsOverview
+          debts={debts}
+          totals={debtTotals}
+          overdueCount={overdueCount}
+          onDelete={id => setDeleteId(id)}
+          onChanged={loadAll}
+        />
+      )}
 
       {/* Add form */}
       {showForm && (
@@ -179,6 +213,23 @@ export default function OtherPayments() {
             </div>
           </div>
 
+          {form.category === 'Qarz' && (
+            <div>
+              <label className="label">
+                Foiz (%) <span className="text-xs text-gray-400 font-normal">(ixtiyoriy)</span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="any"
+                value={form.interest_rate}
+                onChange={e => setForm(p => ({ ...p, interest_rate: e.target.value }))}
+                placeholder="0"
+                className="input-field"
+              />
+            </div>
+          )}
+
           <div>
             <label className="label">Izoh</label>
             <input
@@ -246,7 +297,7 @@ export default function OtherPayments() {
               key={p.id}
               p={p}
               onDelete={() => setDeleteId(p.id)}
-              onChanged={load}
+              onChanged={loadAll}
             />
           ))}
         </div>
@@ -265,6 +316,40 @@ export default function OtherPayments() {
   );
 }
 
+function DebtsOverview({ debts, totals, overdueCount, onDelete, onChanged }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="card border-2 border-amber-100 bg-amber-50/40">
+      <button type="button" onClick={() => setExpanded(e => !e)} className="w-full flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Landmark className="w-4 h-4 text-amber-600 flex-shrink-0" />
+          <span className="font-semibold text-gray-800 text-sm">Qarzdorlik ({debts.length})</span>
+          {overdueCount > 0 && (
+            <span className="text-xs bg-red-100 text-red-600 font-semibold px-2 py-0.5 rounded-full flex items-center gap-0.5">
+              <AlertTriangle className="w-3 h-3" /> {overdueCount} kechikkan
+            </span>
+          )}
+        </div>
+        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${expanded ? 'rotate-180' : ''}`} />
+      </button>
+
+      <div className="mt-2 flex gap-3 flex-wrap">
+        {totals.UZS > 0 && <span className="text-lg font-bold text-gray-900">{formatMoney(totals.UZS, 'UZS')}</span>}
+        {totals.USD > 0 && <span className="text-lg font-bold text-gray-900">{formatMoney(totals.USD, 'USD')}</span>}
+      </div>
+
+      {expanded && (
+        <div className="mt-3 space-y-2">
+          {debts.map(d => (
+            <OtherPaymentCard key={d.id} p={d} onDelete={() => onDelete(d.id)} onChanged={onChanged} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function OtherPaymentCard({ p, onDelete, onChanged }) {
   const [expanded, setExpanded] = useState(false);
   const [showRepayForm, setShowRepayForm] = useState(false);
@@ -278,9 +363,9 @@ function OtherPaymentCard({ p, onDelete, onChanged }) {
   const [deleteRepayId, setDeleteRepayId] = useState(null);
 
   const isLoan = p.category === 'Qarz';
-  const repaidAmount = Number(p.repaid_amount || 0);
-  const remaining = Math.max(0, Number(p.amount) - repaidAmount);
-  const isSettled = isLoan && remaining <= 0;
+  const remaining = Number(p.remaining ?? p.amount);
+  const hasInterest = isLoan && Number(p.interest_rate || 0) > 0;
+  const isSettled = isLoan && remaining <= 0.01;
 
   const loadRepayments = async () => {
     setLoadingRepayments(true);
@@ -331,7 +416,7 @@ function OtherPaymentCard({ p, onDelete, onChanged }) {
   };
 
   return (
-    <div className="card">
+    <div className={`card ${p.is_overdue ? 'border-red-200 bg-red-50/30' : ''}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-700 font-bold flex-shrink-0">
@@ -345,6 +430,11 @@ function OtherPaymentCard({ p, onDelete, onChanged }) {
               {isSettled && (
                 <span className="text-xs bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-full flex items-center gap-0.5">
                   <CheckCircle className="w-3 h-3" /> Qaytarildi
+                </span>
+              )}
+              {p.is_overdue && (
+                <span className="text-xs bg-red-100 text-red-600 font-semibold px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                  <AlertTriangle className="w-3 h-3" /> {p.days_old} kun kechikdi
                 </span>
               )}
             </div>
@@ -369,6 +459,11 @@ function OtherPaymentCard({ p, onDelete, onChanged }) {
 
       {isLoan && (
         <div className="mt-2 pt-2 border-t border-gray-50">
+          {hasInterest && (
+            <p className="text-xs text-gray-400 mb-1.5">
+              Asl qarz: {formatMoney(p.amount, p.currency)} + {p.interest_rate}% foiz = {formatMoney(p.total_due, p.currency)}
+            </p>
+          )}
           <div className="flex items-center justify-between">
             {isSettled ? (
               <span className="text-xs text-green-600 font-semibold">To'liq qaytarildi</span>

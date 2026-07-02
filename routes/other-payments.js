@@ -2,9 +2,25 @@ const express = require('express');
 const router = express.Router();
 const { query, queryOne, run } = require('../database');
 
+const OVERDUE_DAYS = 30;
+
+function withDebtFields(row) {
+  const totalDue = Number(row.amount) + Number(row.amount) * Number(row.interest_rate || 0) / 100;
+  const repaid = Number(row.repaid_amount || 0);
+  const remaining = Math.max(0, totalDue - repaid);
+  const daysOld = Math.floor((Date.now() - new Date(row.paid_at).getTime()) / 86400000);
+  return {
+    ...row,
+    total_due: totalDue,
+    remaining,
+    days_old: daysOld,
+    is_overdue: row.category === 'Qarz' && remaining > 0.01 && daysOld > OVERDUE_DAYS
+  };
+}
+
 router.get('/', async (req, res) => {
   try {
-    const { month, worker_id, limit = 200, offset = 0 } = req.query;
+    const { month, worker_id, category, recipient_name, limit = 200, offset = 0 } = req.query;
     const lim = parseInt(limit); const off = parseInt(offset);
     let sql = `
       SELECT op.*, w.name as worker_name,
@@ -16,9 +32,12 @@ router.get('/', async (req, res) => {
     const params = [];
     if (month) { sql += ' AND substr(op.paid_at,1,7) = ?'; params.push(month); }
     if (worker_id) { sql += ' AND op.worker_id = ?'; params.push(worker_id); }
+    if (category) { sql += ' AND op.category = ?'; params.push(category); }
+    if (recipient_name) { sql += ' AND op.recipient_name = ?'; params.push(recipient_name); }
     sql += ' ORDER BY op.paid_at DESC LIMIT ? OFFSET ?';
     params.push(isNaN(lim) || lim < 0 ? 200 : lim, isNaN(off) || off < 0 ? 0 : off);
-    res.json(await query(sql, params));
+    const rows = await query(sql, params);
+    res.json(rows.map(withDebtFields));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -45,15 +64,45 @@ router.get('/summary', async (req, res) => {
   }
 });
 
+// All-time outstanding debts (not month-scoped) with totals + overdue flag
+router.get('/debts', async (req, res) => {
+  try {
+    const rows = await query(
+      `SELECT op.*, w.name as worker_name,
+        COALESCE((SELECT SUM(lr.amount) FROM loan_repayments lr WHERE lr.other_payment_id = op.id), 0) as repaid_amount
+       FROM other_payments op
+       LEFT JOIN workers w ON op.worker_id = w.id
+       WHERE op.category = 'Qarz'
+       ORDER BY op.paid_at ASC`,
+      []
+    );
+    const debts = rows.map(withDebtFields).filter(d => d.remaining > 0.01);
+
+    const totals = {};
+    let overdueCount = 0;
+    debts.forEach(d => {
+      totals[d.currency] = (totals[d.currency] || 0) + d.remaining;
+      if (d.is_overdue) overdueCount++;
+    });
+
+    res.json({ debts, totals, overdue_count: overdueCount });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post('/', async (req, res) => {
   try {
-    const { recipient_name, worker_id, amount, currency, category, notes, paid_at } = req.body;
+    const { recipient_name, worker_id, amount, currency, category, interest_rate, notes, paid_at } = req.body;
     if (!recipient_name || !recipient_name.trim())
       return res.status(400).json({ error: "Qabul qiluvchi ismi kiritilishi shart" });
 
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0)
       return res.status(400).json({ error: "Miqdor 0 dan katta bo'lishi shart" });
+
+    const parsedInterest = parseFloat(interest_rate);
+    const finalInterest = isNaN(parsedInterest) || parsedInterest < 0 ? 0 : parsedInterest;
 
     let linkedWorkerId = worker_id || null;
     if (!linkedWorkerId) {
@@ -62,16 +111,17 @@ router.post('/', async (req, res) => {
     }
 
     const result = await run(
-      `INSERT INTO other_payments (recipient_name, worker_id, amount, currency, category, notes, paid_at)
-       VALUES (?,?,?,?,?,?,?)`,
+      `INSERT INTO other_payments (recipient_name, worker_id, amount, currency, category, interest_rate, notes, paid_at)
+       VALUES (?,?,?,?,?,?,?,?)`,
       [recipient_name.trim(), linkedWorkerId, parsedAmount, currency || 'UZS',
-       category || 'Boshqa', notes || '', paid_at || new Date().toISOString()]
+       category || 'Boshqa', finalInterest, notes || '', paid_at || new Date().toISOString()]
     );
-    res.status(201).json(await queryOne(
+    const created = await queryOne(
       `SELECT op.*, w.name as worker_name FROM other_payments op
        LEFT JOIN workers w ON op.worker_id = w.id WHERE op.id = ?`,
       [result.lastInsertRowid]
-    ));
+    );
+    res.status(201).json(withDebtFields({ ...created, repaid_amount: 0 }));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

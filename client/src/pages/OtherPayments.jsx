@@ -6,7 +6,7 @@ import {
   getOtherPayments, getOtherPaymentsSummary, createOtherPayment, deleteOtherPayment, getWorkers,
   getLoanRepayments, addLoanRepayment, deleteLoanRepayment, getDebtsSummary
 } from '../api';
-import { formatMoney, formatDateShort, currentMonth, MONTHS_LIST, OTHER_PAYMENT_CATEGORIES } from '../utils';
+import { formatMoney, formatDateShort, currentMonth, monthLabel, MONTHS_LIST, OTHER_PAYMENT_CATEGORIES } from '../utils';
 import { ConfirmModal } from '../components/Modal';
 
 function todayStr() {
@@ -31,6 +31,7 @@ export default function OtherPayments() {
   const [debts, setDebts] = useState([]);
   const [debtTotals, setDebtTotals] = useState({});
   const [debtsLoading, setDebtsLoading] = useState(true);
+  const [debtMonthFilter, setDebtMonthFilter] = useState('all');
 
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -116,6 +117,15 @@ export default function OtherPayments() {
   const unsettledDebtIds = new Set(debts.map(d => d.id));
   const visiblePayments = payments.filter(p => !(p.category === 'Qarz' && unsettledDebtIds.has(p.id)));
 
+  // Debts filtered by the month they were given (independent of the monthly-expenses filter below)
+  const filteredDebts = debtMonthFilter === 'all'
+    ? debts
+    : debts.filter(d => d.paid_at.slice(0, 7) === debtMonthFilter);
+  const filteredDebtTotals = {};
+  filteredDebts.forEach(d => {
+    filteredDebtTotals[d.currency] = (filteredDebtTotals[d.currency] || 0) + d.remaining;
+  });
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -132,22 +142,41 @@ export default function OtherPayments() {
         </button>
       </div>
 
-      {/* Debts overview — simple, always visible, all-time */}
+      {/* Debts overview — filterable by the month a loan was given, all-time by default */}
       {!debtsLoading && debts.length > 0 && (
         <div className="card">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-sm font-semibold text-gray-500">Qarzdorlarim</span>
-            <span className="text-xs text-gray-400">{debts.length} kishi</span>
+          <div className="flex items-center justify-between mb-3 gap-2">
+            <span className="text-sm font-semibold text-gray-500 flex-shrink-0">Qarzdorlarim</span>
+            <select
+              value={debtMonthFilter}
+              onChange={e => setDebtMonthFilter(e.target.value)}
+              className="text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">Barcha vaqt</option>
+              {MONTHS_LIST().map(m => (
+                <option key={m.value} value={m.value}>{m.label}</option>
+              ))}
+            </select>
           </div>
-          <div className="flex items-baseline gap-3 flex-wrap mb-1">
-            {debtTotals.UZS > 0 && <span className="text-3xl font-bold text-gray-900 leading-tight">{formatMoney(debtTotals.UZS, 'UZS')}</span>}
-            {debtTotals.USD > 0 && <span className="text-3xl font-bold text-gray-900 leading-tight">{formatMoney(debtTotals.USD, 'USD')}</span>}
+
+          <div className="flex items-baseline gap-3 flex-wrap">
+            {filteredDebtTotals.UZS > 0 && <span className="text-3xl font-bold text-gray-900 leading-tight">{formatMoney(filteredDebtTotals.UZS, 'UZS')}</span>}
+            {filteredDebtTotals.USD > 0 && <span className="text-3xl font-bold text-gray-900 leading-tight">{formatMoney(filteredDebtTotals.USD, 'USD')}</span>}
+            {filteredDebtTotals.UZS === undefined && filteredDebtTotals.USD === undefined && (
+              <span className="text-lg font-semibold text-gray-300">Qarz yo'q</span>
+            )}
           </div>
-          <div className="divide-y divide-gray-100 mt-3">
-            {debts.map(d => (
-              <DebtRow key={d.id} debt={d} onDelete={() => setDeleteId(d.id)} onChanged={loadAll} />
-            ))}
-          </div>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {filteredDebts.length} kishi qarzdor{debtMonthFilter !== 'all' ? ` · ${monthLabel(debtMonthFilter)}da berilgan` : ''}
+          </p>
+
+          {filteredDebts.length > 0 && (
+            <div className="divide-y divide-gray-100 mt-3">
+              {filteredDebts.map(d => (
+                <DebtRow key={d.id} debt={d} onDelete={() => setDeleteId(d.id)} onChanged={loadAll} />
+              ))}
+            </div>
+          )}
         </div>
       )}
 

@@ -53,6 +53,13 @@ async function initDB() {
       notes TEXT DEFAULT '',
       paid_at TEXT DEFAULT (datetime('now'))
     )`,
+    `CREATE TABLE IF NOT EXISTS loan_repayments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      other_payment_id INTEGER NOT NULL,
+      amount REAL NOT NULL,
+      notes TEXT DEFAULT '',
+      paid_at TEXT DEFAULT (datetime('now'))
+    )`,
   ], 'write');
 
   try {

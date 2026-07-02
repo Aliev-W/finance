@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Plus, X, Loader2, AlertCircle, Wallet, Trash2
+  Plus, X, Loader2, AlertCircle, Wallet, Trash2, Calendar, ChevronDown, CheckCircle
 } from 'lucide-react';
-import { getOtherPayments, getOtherPaymentsSummary, createOtherPayment, deleteOtherPayment, getWorkers } from '../api';
-import { formatMoney, formatDate, currentMonth, MONTHS_LIST, OTHER_PAYMENT_CATEGORIES } from '../utils';
+import {
+  getOtherPayments, getOtherPaymentsSummary, createOtherPayment, deleteOtherPayment, getWorkers,
+  getLoanRepayments, addLoanRepayment, deleteLoanRepayment
+} from '../api';
+import { formatMoney, formatDateShort, currentMonth, MONTHS_LIST, OTHER_PAYMENT_CATEGORIES } from '../utils';
 import { ConfirmModal } from '../components/Modal';
 
 function todayStr() {
@@ -239,37 +242,12 @@ export default function OtherPayments() {
       {!loading && payments.length > 0 && (
         <div className="space-y-2">
           {payments.map(p => (
-            <div key={p.id} className="card">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-700 font-bold flex-shrink-0">
-                    {p.recipient_name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">{p.recipient_name}</p>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{p.category}</span>
-                      {p.worker_name && <span className="text-xs text-blue-500 font-medium">· Ishchi</span>}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="font-bold text-gray-900">{formatMoney(p.amount, p.currency)}</p>
-                  <button
-                    onClick={() => setDeleteId(p.id)}
-                    className="text-xs text-red-500 font-medium mt-1.5 flex items-center gap-1 ml-auto"
-                  >
-                    <Trash2 className="w-3 h-3" /> O'chirish
-                  </button>
-                </div>
-              </div>
-              {(p.notes || p.paid_at) && (
-                <div className="mt-2 pt-2 border-t border-gray-50 flex items-center justify-between text-xs text-gray-400 gap-2">
-                  <span className="flex-shrink-0">{formatDate(p.paid_at)}</span>
-                  {p.notes && <span className="truncate">{p.notes}</span>}
-                </div>
-              )}
-            </div>
+            <OtherPaymentCard
+              key={p.id}
+              p={p}
+              onDelete={() => setDeleteId(p.id)}
+              onChanged={load}
+            />
           ))}
         </div>
       )}
@@ -280,6 +258,211 @@ export default function OtherPayments() {
         onConfirm={handleDelete}
         title="To'lovni o'chirish"
         message="Bu to'lovni o'chirishni tasdiqlaysizmi? Bu amal qaytarib bo'lmaydi."
+        confirmText="O'chirish"
+        confirmClass="btn-danger"
+      />
+    </div>
+  );
+}
+
+function OtherPaymentCard({ p, onDelete, onChanged }) {
+  const [expanded, setExpanded] = useState(false);
+  const [showRepayForm, setShowRepayForm] = useState(false);
+  const [repayments, setRepayments] = useState([]);
+  const [loadingRepayments, setLoadingRepayments] = useState(false);
+  const [repayAmount, setRepayAmount] = useState('');
+  const [repayNote, setRepayNote] = useState('');
+  const [repayDate, setRepayDate] = useState(todayStr());
+  const [repaySaving, setRepaySaving] = useState(false);
+  const [repayError, setRepayError] = useState(null);
+  const [deleteRepayId, setDeleteRepayId] = useState(null);
+
+  const isLoan = p.category === 'Qarz';
+  const repaidAmount = Number(p.repaid_amount || 0);
+  const remaining = Math.max(0, Number(p.amount) - repaidAmount);
+  const isSettled = isLoan && remaining <= 0;
+
+  const loadRepayments = async () => {
+    setLoadingRepayments(true);
+    try {
+      setRepayments(await getLoanRepayments(p.id));
+    } catch (e) {
+      // ignore, list just stays empty
+    } finally {
+      setLoadingRepayments(false);
+    }
+  };
+
+  const toggleExpand = () => {
+    const next = !expanded;
+    setExpanded(next);
+    if (next) loadRepayments();
+  };
+
+  const handleAddRepayment = async (e) => {
+    e.preventDefault();
+    if (!repayAmount || parseFloat(repayAmount) <= 0) { setRepayError('Miqdor kiritilishi shart'); return; }
+    setRepaySaving(true);
+    setRepayError(null);
+    try {
+      const paidAt = new Date(`${repayDate}T12:00:00`).toISOString();
+      await addLoanRepayment(p.id, { amount: parseFloat(repayAmount), notes: repayNote, paid_at: paidAt });
+      setRepayAmount(''); setRepayNote(''); setRepayDate(todayStr());
+      setShowRepayForm(false);
+      setExpanded(true);
+      await loadRepayments();
+      onChanged();
+    } catch (e) {
+      setRepayError(e.message);
+    } finally {
+      setRepaySaving(false);
+    }
+  };
+
+  const handleDeleteRepayment = async () => {
+    const id = deleteRepayId;
+    try {
+      await deleteLoanRepayment(id);
+      setRepayments(r => r.filter(x => x.id !== id));
+      onChanged();
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  return (
+    <div className="card">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-700 font-bold flex-shrink-0">
+            {p.recipient_name.charAt(0).toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-gray-900 truncate">{p.recipient_name}</p>
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{p.category}</span>
+              {p.worker_name && <span className="text-xs text-blue-500 font-medium">· Ishchi</span>}
+              {isSettled && (
+                <span className="text-xs bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                  <CheckCircle className="w-3 h-3" /> Qaytarildi
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="text-right flex-shrink-0">
+          <p className="font-bold text-gray-900">{formatMoney(p.amount, p.currency)}</p>
+          <button
+            onClick={onDelete}
+            className="text-xs text-red-500 font-medium mt-1.5 flex items-center gap-1 ml-auto"
+          >
+            <Trash2 className="w-3 h-3" /> O'chirish
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-2 pt-2 border-t border-gray-50 flex items-center gap-1.5 text-xs text-gray-400">
+        <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+        <span className="flex-shrink-0">{formatDateShort(p.paid_at)}</span>
+        {p.notes && <span className="truncate">· {p.notes}</span>}
+      </div>
+
+      {isLoan && (
+        <div className="mt-2 pt-2 border-t border-gray-50">
+          <div className="flex items-center justify-between">
+            {isSettled ? (
+              <span className="text-xs text-green-600 font-semibold">To'liq qaytarildi</span>
+            ) : (
+              <span className="text-xs text-amber-600 font-semibold">
+                Qoldi: {formatMoney(remaining, p.currency)}
+              </span>
+            )}
+            <div className="flex items-center gap-1.5">
+              {!isSettled && (
+                <button
+                  type="button"
+                  onClick={() => { setShowRepayForm(s => !s); setRepayError(null); }}
+                  className="text-xs text-blue-600 font-semibold bg-blue-50 px-2.5 py-1 rounded-lg flex items-center gap-1"
+                >
+                  <Plus className="w-3 h-3" /> Qaytarish
+                </button>
+              )}
+              <button type="button" onClick={toggleExpand} className="text-gray-400 p-1">
+                <ChevronDown className={`w-4 h-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
+          </div>
+
+          {showRepayForm && (
+            <form onSubmit={handleAddRepayment} className="mt-3 space-y-2 bg-gray-50 rounded-xl p-3">
+              {repayError && (
+                <p className="text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {repayError}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={repayAmount}
+                  onChange={e => setRepayAmount(e.target.value)}
+                  placeholder={`Max ${remaining}`}
+                  className="input-field flex-1 py-2 text-sm"
+                />
+                <input
+                  type="date"
+                  value={repayDate}
+                  onChange={e => setRepayDate(e.target.value)}
+                  className="input-field py-2 text-sm w-36"
+                />
+              </div>
+              <input
+                type="text"
+                value={repayNote}
+                onChange={e => setRepayNote(e.target.value)}
+                placeholder="Izoh (ixtiyoriy)..."
+                className="input-field py-2 text-sm"
+              />
+              <button type="submit" disabled={repaySaving} className="btn-primary w-full py-2 text-sm">
+                {repaySaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Saqlash'}
+              </button>
+            </form>
+          )}
+
+          {expanded && (
+            <div className="mt-3 space-y-1.5">
+              {loadingRepayments ? (
+                <div className="flex justify-center py-3">
+                  <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                </div>
+              ) : repayments.length === 0 ? (
+                <p className="text-xs text-gray-400 text-center py-2">Hali qaytarish yo'q</p>
+              ) : (
+                repayments.map(r => (
+                  <div key={r.id} className="flex items-center justify-between gap-2 text-xs bg-gray-50 rounded-lg px-3 py-2">
+                    <div className="min-w-0">
+                      <span className="font-semibold text-gray-700">{formatMoney(r.amount, p.currency)}</span>
+                      <span className="text-gray-400 ml-2">{formatDateShort(r.paid_at)}</span>
+                      {r.notes && <div className="text-gray-400 truncate">{r.notes}</div>}
+                    </div>
+                    <button onClick={() => setDeleteRepayId(r.id)} className="text-red-400 flex-shrink-0">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      <ConfirmModal
+        open={!!deleteRepayId}
+        onClose={() => setDeleteRepayId(null)}
+        onConfirm={handleDeleteRepayment}
+        title="Qaytarishni o'chirish"
+        message="Bu qaytarish yozuvini o'chirishni tasdiqlaysizmi?"
         confirmText="O'chirish"
         confirmClass="btn-danger"
       />

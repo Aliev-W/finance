@@ -99,6 +99,14 @@ export const createOtherPayment = (data) =>
 export const deleteOtherPayment = (id) =>
   request(`/other-payments/${id}`, { method: 'DELETE' }).then(r => { clearCache(); return r; });
 
+// Loan repayments
+export const getLoanRepayments = (loanId) =>
+  request(`/other-payments/${loanId}/repayments`);
+export const addLoanRepayment = (loanId, data) =>
+  request(`/other-payments/${loanId}/repayments`, { method: 'POST', body: JSON.stringify(data) }).then(r => { clearCache(); return r; });
+export const deleteLoanRepayment = (repaymentId) =>
+  request(`/other-payments/repayments/${repaymentId}`, { method: 'DELETE' }).then(r => { clearCache(); return r; });
+
 // Reports
 export const getMonthlyReport = (month) =>
   cachedRequest(`report:${month}`, `/reports/monthly?month=${month}`);

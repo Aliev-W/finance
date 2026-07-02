@@ -7,7 +7,8 @@ router.get('/', async (req, res) => {
     const { month, worker_id, limit = 200, offset = 0 } = req.query;
     const lim = parseInt(limit); const off = parseInt(offset);
     let sql = `
-      SELECT op.*, w.name as worker_name
+      SELECT op.*, w.name as worker_name,
+        COALESCE((SELECT SUM(lr.amount) FROM loan_repayments lr WHERE lr.other_payment_id = op.id), 0) as repaid_amount
       FROM other_payments op
       LEFT JOIN workers w ON op.worker_id = w.id
       WHERE 1=1
@@ -80,7 +81,53 @@ router.delete('/:id', async (req, res) => {
   try {
     const p = await queryOne('SELECT id FROM other_payments WHERE id = ?', [req.params.id]);
     if (!p) return res.status(404).json({ error: "To'lov topilmadi" });
+    await run('DELETE FROM loan_repayments WHERE other_payment_id = ?', [req.params.id]);
     await run('DELETE FROM other_payments WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Loan repayments
+router.get('/:id/repayments', async (req, res) => {
+  try {
+    const loan = await queryOne('SELECT id FROM other_payments WHERE id = ?', [req.params.id]);
+    if (!loan) return res.status(404).json({ error: "Qarz yozuvi topilmadi" });
+    res.json(await query(
+      'SELECT * FROM loan_repayments WHERE other_payment_id = ? ORDER BY paid_at DESC',
+      [req.params.id]
+    ));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/:id/repayments', async (req, res) => {
+  try {
+    const { amount, notes, paid_at } = req.body;
+    const loan = await queryOne('SELECT * FROM other_payments WHERE id = ?', [req.params.id]);
+    if (!loan) return res.status(404).json({ error: "Qarz yozuvi topilmadi" });
+
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0)
+      return res.status(400).json({ error: "Miqdor 0 dan katta bo'lishi shart" });
+
+    const result = await run(
+      `INSERT INTO loan_repayments (other_payment_id, amount, notes, paid_at) VALUES (?,?,?,?)`,
+      [req.params.id, parsedAmount, notes || '', paid_at || new Date().toISOString()]
+    );
+    res.status(201).json(await queryOne('SELECT * FROM loan_repayments WHERE id = ?', [result.lastInsertRowid]));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/repayments/:rid', async (req, res) => {
+  try {
+    const r = await queryOne('SELECT id FROM loan_repayments WHERE id = ?', [req.params.rid]);
+    if (!r) return res.status(404).json({ error: "Qaytarish yozuvi topilmadi" });
+    await run('DELETE FROM loan_repayments WHERE id = ?', [req.params.rid]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

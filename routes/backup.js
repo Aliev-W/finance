@@ -9,14 +9,16 @@ router.get('/download', async (req, res) => {
     const family_members = await query('SELECT * FROM family_members', []);
     const payments = await query('SELECT * FROM payments', []);
     const other_payments = await query('SELECT * FROM other_payments', []);
+    const loan_repayments = await query('SELECT * FROM loan_repayments', []);
 
     const backup = {
-      version: 3,
+      version: 4,
       exported_at: new Date().toISOString(),
       workers,
       family_members,
       payments,
-      other_payments
+      other_payments,
+      loan_repayments
     };
 
     const now = new Date();
@@ -45,6 +47,7 @@ router.post('/restore', upload.single('backup'), async (req, res) => {
       return res.status(400).json({ error: "Noto'g'ri backup fayl formati" });
 
     const statements = [
+      { sql: 'DELETE FROM loan_repayments', args: [] },
       { sql: 'DELETE FROM other_payments', args: [] },
       { sql: 'DELETE FROM payments', args: [] },
       { sql: 'DELETE FROM family_members', args: [] },
@@ -76,6 +79,13 @@ router.post('/restore', upload.single('backup'), async (req, res) => {
       statements.push({
         sql: `INSERT INTO other_payments (id, recipient_name, worker_id, amount, currency, category, notes, paid_at) VALUES (?,?,?,?,?,?,?,?)`,
         args: [op.id, op.recipient_name, op.worker_id||null, op.amount, op.currency||'UZS', op.category||'Boshqa', op.notes||'', op.paid_at||new Date().toISOString()]
+      });
+    }
+
+    for (const lr of (data.loan_repayments || [])) {
+      statements.push({
+        sql: `INSERT INTO loan_repayments (id, other_payment_id, amount, notes, paid_at) VALUES (?,?,?,?,?)`,
+        args: [lr.id, lr.other_payment_id, lr.amount, lr.notes||'', lr.paid_at||new Date().toISOString()]
       });
     }
 

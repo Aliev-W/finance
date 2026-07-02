@@ -9,6 +9,7 @@ import WorkerDetail from './pages/WorkerDetail';
 import AddWorker from './pages/AddWorker';
 import PaySalary from './pages/PaySalary';
 import History from './pages/History';
+import OtherPayments from './pages/OtherPayments';
 import Annual from './pages/Annual';
 import Settings from './pages/Settings';
 import { checkAuth } from './api';
@@ -81,6 +82,7 @@ function AuthenticatedApp() {
           <Route path="/workers/:id/edit" element={<AddWorker />} />
           <Route path="/pay" element={<PaySalary />} />
           <Route path="/history" element={<History />} />
+          <Route path="/other-payments" element={<OtherPayments />} />
           <Route path="/annual" element={<Annual />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />

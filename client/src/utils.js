@@ -79,6 +79,8 @@ export const RELATIONS = [
   "Boshqa"
 ];
 
+export const OTHER_PAYMENT_CATEGORIES = ["Bonus", "Qarz", "Yordam", "Xarajat", "Boshqa"];
+
 export const MONTHS_LIST = (count = 24) => {
   const months = [];
   const now = new Date();

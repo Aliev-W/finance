@@ -87,6 +87,18 @@ export const createPayment = (data) =>
 export const deletePayment = (id) =>
   request(`/payments/${id}`, { method: 'DELETE' }).then(r => { clearCache(); return r; });
 
+// Other payments (non-salary)
+export const getOtherPayments = (params = {}) => {
+  const q = new URLSearchParams(params).toString();
+  return request(`/other-payments${q ? '?' + q : ''}`);
+};
+export const getOtherPaymentsSummary = (month) =>
+  request(`/other-payments/summary?month=${month}`);
+export const createOtherPayment = (data) =>
+  request('/other-payments', { method: 'POST', body: JSON.stringify(data) }).then(r => { clearCache(); return r; });
+export const deleteOtherPayment = (id) =>
+  request(`/other-payments/${id}`, { method: 'DELETE' }).then(r => { clearCache(); return r; });
+
 // Reports
 export const getMonthlyReport = (month) =>
   cachedRequest(`report:${month}`, `/reports/monthly?month=${month}`);

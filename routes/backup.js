@@ -8,13 +8,15 @@ router.get('/download', async (req, res) => {
     const workers = await query('SELECT * FROM workers', []);
     const family_members = await query('SELECT * FROM family_members', []);
     const payments = await query('SELECT * FROM payments', []);
+    const other_payments = await query('SELECT * FROM other_payments', []);
 
     const backup = {
-      version: 2,
+      version: 3,
       exported_at: new Date().toISOString(),
       workers,
       family_members,
-      payments
+      payments,
+      other_payments
     };
 
     const now = new Date();
@@ -43,6 +45,7 @@ router.post('/restore', upload.single('backup'), async (req, res) => {
       return res.status(400).json({ error: "Noto'g'ri backup fayl formati" });
 
     const statements = [
+      { sql: 'DELETE FROM other_payments', args: [] },
       { sql: 'DELETE FROM payments', args: [] },
       { sql: 'DELETE FROM family_members', args: [] },
       { sql: 'DELETE FROM workers', args: [] },
@@ -66,6 +69,13 @@ router.post('/restore', upload.single('backup'), async (req, res) => {
       statements.push({
         sql: `INSERT INTO payments (id, worker_id, family_member_id, payment_month, amount, currency, payment_type, receiver_name, receiver_relation, signature_photo, photo_url, notes, paid_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         args: [p.id, p.worker_id, p.family_member_id||null, p.payment_month, p.amount, p.currency||'UZS', p.payment_type||'full', p.receiver_name||'', p.receiver_relation||'', p.signature_photo||'', p.photo_url||'', p.notes||'', p.paid_at||new Date().toISOString()]
+      });
+    }
+
+    for (const op of (data.other_payments || [])) {
+      statements.push({
+        sql: `INSERT INTO other_payments (id, recipient_name, worker_id, amount, currency, category, notes, paid_at) VALUES (?,?,?,?,?,?,?,?)`,
+        args: [op.id, op.recipient_name, op.worker_id||null, op.amount, op.currency||'UZS', op.category||'Boshqa', op.notes||'', op.paid_at||new Date().toISOString()]
       });
     }
 

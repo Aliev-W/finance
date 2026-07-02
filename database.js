@@ -43,6 +43,16 @@ async function initDB() {
       notes TEXT DEFAULT '',
       paid_at TEXT DEFAULT (datetime('now'))
     )`,
+    `CREATE TABLE IF NOT EXISTS other_payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      recipient_name TEXT NOT NULL,
+      worker_id INTEGER,
+      amount REAL NOT NULL,
+      currency TEXT NOT NULL DEFAULT 'UZS',
+      category TEXT DEFAULT 'Boshqa',
+      notes TEXT DEFAULT '',
+      paid_at TEXT DEFAULT (datetime('now'))
+    )`,
   ], 'write');
 
   try {

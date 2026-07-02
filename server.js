@@ -76,6 +76,7 @@ app.use('/api', (req, res, next) => {
 
 app.use('/api/workers', require('./routes/workers'));
 app.use('/api/payments', require('./routes/payments'));
+app.use('/api/other-payments', require('./routes/other-payments'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/export', require('./routes/export'));
 app.use('/api/backup', require('./routes/backup'));

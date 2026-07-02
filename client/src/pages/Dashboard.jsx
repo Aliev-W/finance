@@ -113,18 +113,18 @@ export default function Dashboard() {
       )}
 
       {/* Month Selector */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between px-2 py-3">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between px-1.5 py-1.5">
         <button onClick={() => setMonth(prevMonth(month))}
-          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors">
-          <ChevronLeft className="w-5 h-5 text-gray-500" />
+          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors">
+          <ChevronLeft className="w-4 h-4 text-gray-500" />
         </button>
-        <div className="text-center">
-          <div className="font-bold text-gray-900 text-lg leading-tight">{monthLabel(month)}</div>
-          <div className="text-xs text-gray-400 mt-0.5">{month === currentMonth() ? '● Joriy oy' : 'O\'tgan oy'}</div>
+        <div className="flex items-baseline gap-1.5">
+          <span className="font-bold text-gray-900 text-sm">{monthLabel(month)}</span>
+          {month === currentMonth() && <span className="text-[11px] text-blue-500">● Joriy</span>}
         </div>
         <button onClick={() => canGoNext && setMonth(nextMonth(month))} disabled={!canGoNext}
-          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-25">
-          <ChevronRight className="w-5 h-5 text-gray-500" />
+          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-25">
+          <ChevronRight className="w-4 h-4 text-gray-500" />
         </button>
       </div>
 
@@ -146,28 +146,23 @@ export default function Dashboard() {
           {/* Stats Grid */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             {data.total_active > 0 && (
-              <div className="px-4 pt-4 pb-3 border-b border-gray-50">
-                <div className="flex justify-between text-xs text-gray-400 mb-2">
-                  <span>To'lov holati — {monthLabel(month)}</span>
+              <div className="px-4 pt-3 pb-2.5 border-b border-gray-50">
+                <div className="flex justify-between text-xs text-gray-400 mb-1.5">
+                  <span>To'lov holati</span>
                   <span>{data.total_active > 0 ? Math.round((data.paid_full + data.paid_partial) / data.total_active * 100) : 0}% bajarildi</span>
                 </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden flex">
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden flex">
                   <div className="h-full bg-green-500 transition-all" style={{width: `${data.total_active ? data.paid_full/data.total_active*100 : 0}%`}} />
                   <div className="h-full bg-amber-400 transition-all" style={{width: `${data.total_active ? data.paid_partial/data.total_active*100 : 0}%`}} />
-                </div>
-                <div className="flex gap-3 mt-2">
-                  <span className="flex items-center gap-1 text-xs text-gray-400"><span className="w-2 h-2 rounded-full bg-green-500 inline-block"/>To'liq</span>
-                  <span className="flex items-center gap-1 text-xs text-gray-400"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block"/>Qisman</span>
-                  <span className="flex items-center gap-1 text-xs text-gray-400"><span className="w-2 h-2 rounded-full bg-gray-200 inline-block"/>To'lanmagan</span>
                 </div>
               </div>
             )}
 
             <div className="grid grid-cols-2">
-              <StatCard dotColor="bg-blue-500"  value={data.total_active}  label="Faol ishchilar"  sub="Jami ro'yxatda"    border="border-r border-b border-gray-50" onClick={() => openModal('all')} />
-              <StatCard dotColor="bg-green-500" value={data.paid_full}     label="To'liq to'landi" sub="Oylik to'liq berildi" border="border-b border-gray-50" onClick={() => openModal('full')} />
-              <StatCard dotColor="bg-amber-400" value={data.paid_partial}  label="Qisman to'landi" sub="Avansi berilgan"   border="border-r border-gray-50" onClick={() => openModal('partial')} />
-              <StatCard dotColor="bg-red-400"   value={data.unpaid}        label="To'lanmagan"     sub="Kutilmoqda"        border="" onClick={() => openModal('unpaid')} />
+              <StatCard dotColor="bg-blue-500"  value={data.total_active}  label="Faol ishchilar"  border="border-r border-b border-gray-50" onClick={() => openModal('all')} />
+              <StatCard dotColor="bg-green-500" value={data.paid_full}     label="To'liq to'landi" border="border-b border-gray-50" onClick={() => openModal('full')} />
+              <StatCard dotColor="bg-amber-400" value={data.paid_partial}  label="Qisman to'landi" border="border-r border-gray-50" onClick={() => openModal('partial')} />
+              <StatCard dotColor="bg-red-400"   value={data.unpaid}        label="To'lanmagan"     border="" onClick={() => openModal('unpaid')} />
             </div>
           </div>
 
@@ -317,18 +312,14 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ dotColor, value, label, sub, border, onClick }) {
+function StatCard({ dotColor, value, label, border, onClick }) {
   return (
-    <button onClick={onClick} className={`p-4 text-left hover:bg-gray-50 active:bg-gray-100 transition-colors ${border}`}>
-      <div className="flex items-center gap-2 mb-2">
-        <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${dotColor}`} />
+    <button onClick={onClick} className={`p-3 text-left hover:bg-gray-50 active:bg-gray-100 transition-colors ${border}`}>
+      <div className="flex items-center gap-1.5 mb-1">
+        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
         <span className="text-xs text-gray-400 font-medium truncate">{label}</span>
       </div>
-      <div className="text-3xl font-bold text-gray-900 leading-none mb-1">{value}</div>
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-gray-400">{sub}</span>
-        <ArrowRight className="w-3.5 h-3.5 text-gray-300" />
-      </div>
+      <div className="text-2xl font-bold text-gray-900 leading-none">{value}</div>
     </button>
   );
 }

@@ -255,6 +255,8 @@ function DebtRow({ debt: p, onDelete, onChanged }) {
   const [repayments, setRepayments] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [repayAmount, setRepayAmount] = useState('');
+  const [repayCurrency, setRepayCurrency] = useState(p.currency);
+  const [repayEquivalent, setRepayEquivalent] = useState('');
   const [repaySaving, setRepaySaving] = useState(false);
   const [repayError, setRepayError] = useState(null);
   const [deleteRepayId, setDeleteRepayId] = useState(null);
@@ -262,6 +264,8 @@ function DebtRow({ debt: p, onDelete, onChanged }) {
   const remaining = Number(p.remaining ?? p.amount);
   const originalAmount = Number(p.amount);
   const hasPartialRepayment = remaining > 0.01 && remaining < originalAmount - 0.01;
+  const otherCurrency = p.currency === 'USD' ? 'UZS' : 'USD';
+  const isCrossCurrency = repayCurrency !== p.currency;
 
   const loadHistory = async () => {
     setLoadingHistory(true);
@@ -283,11 +287,20 @@ function DebtRow({ debt: p, onDelete, onChanged }) {
   const handleRepay = async (e) => {
     e.preventDefault();
     if (!repayAmount || parseFloat(repayAmount) <= 0) { setRepayError('Miqdor kiritilishi shart'); return; }
+    if (isCrossCurrency && (!repayEquivalent || parseFloat(repayEquivalent) <= 0)) {
+      setRepayError(`${p.currency === 'USD' ? '$' : "so'm"} hisobida nechaga tengligini kiriting`);
+      return;
+    }
     setRepaySaving(true);
     setRepayError(null);
     try {
-      await addLoanRepayment(p.id, { amount: parseFloat(repayAmount), paid_at: new Date().toISOString() });
+      const reductionAmount = isCrossCurrency ? parseFloat(repayEquivalent) : parseFloat(repayAmount);
+      const notes = isCrossCurrency
+        ? `${formatMoney(parseFloat(repayAmount), repayCurrency)} qabul qilindi`
+        : '';
+      await addLoanRepayment(p.id, { amount: reductionAmount, notes, paid_at: new Date().toISOString() });
       setRepayAmount('');
+      setRepayEquivalent('');
       setShowRepayForm(false);
       onChanged();
     } catch (e) {
@@ -346,13 +359,39 @@ function DebtRow({ debt: p, onDelete, onChanged }) {
               autoFocus
               value={repayAmount}
               onChange={e => setRepayAmount(e.target.value)}
-              placeholder={`Max ${remaining}`}
+              placeholder={isCrossCurrency ? '0' : `Max ${remaining}`}
               className="input-field py-2 text-sm flex-1"
             />
-            <button type="submit" disabled={repaySaving} className="btn-primary py-2 px-4 text-sm flex-shrink-0">
-              {repaySaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'OK'}
-            </button>
+            <select
+              value={repayCurrency}
+              onChange={e => { setRepayCurrency(e.target.value); setRepayEquivalent(''); }}
+              className="input-field py-2 text-sm w-24 flex-shrink-0"
+            >
+              <option value={p.currency}>{p.currency === 'USD' ? '$' : "so'm"}</option>
+              <option value={otherCurrency}>{otherCurrency === 'USD' ? '$' : "so'm"}</option>
+            </select>
           </div>
+
+          {isCrossCurrency && (
+            <div>
+              <p className="text-xs text-gray-400 mb-1">
+                Bu {p.currency === 'USD' ? 'dollarda' : "so'mda"} nechaga teng? · Max {formatMoney(remaining, p.currency)}
+              </p>
+              <input
+                type="number"
+                min="0"
+                step="any"
+                value={repayEquivalent}
+                onChange={e => setRepayEquivalent(e.target.value)}
+                placeholder="0"
+                className="input-field py-2 text-sm w-full"
+              />
+            </div>
+          )}
+
+          <button type="submit" disabled={repaySaving} className="btn-primary py-2 text-sm">
+            {repaySaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Saqlash'}
+          </button>
         </form>
       )}
 
@@ -372,16 +411,19 @@ function DebtRow({ debt: p, onDelete, onChanged }) {
             <p className="text-xs text-gray-400">Hali qaytarilmagan</p>
           ) : (
             repayments.map(r => (
-              <div key={r.id} className="flex items-center justify-between text-xs">
-                <span className="text-gray-600">
-                  <span className="text-green-600">Qaytardi</span> · {formatDateShort(r.paid_at)}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-green-700">{formatMoney(r.amount, p.currency)}</span>
-                  <button onClick={() => setDeleteRepayId(r.id)} className="text-red-400 flex-shrink-0">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+              <div key={r.id} className="text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">
+                    <span className="text-green-600">Qaytardi</span> · {formatDateShort(r.paid_at)}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-green-700">{formatMoney(r.amount, p.currency)}</span>
+                    <button onClick={() => setDeleteRepayId(r.id)} className="text-red-400 flex-shrink-0">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
+                {r.notes && <p className="text-gray-400 mt-0.5">{r.notes}</p>}
               </div>
             ))
           )}

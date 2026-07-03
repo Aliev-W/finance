@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { query, queryOne, run } = require('../database');
 
+const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
+const IMAGE_DATA_URL_RE = /^data:image\/(png|jpe?g|gif|webp);base64,[a-z0-9+/=]+$/i;
+
 router.get('/', async (req, res) => {
   try {
     const { month, worker_id, limit = 100, offset = 0 } = req.query;
@@ -17,7 +20,8 @@ router.get('/', async (req, res) => {
     if (month) { sql += ' AND p.payment_month = ?'; params.push(month); }
     if (worker_id) { sql += ' AND p.worker_id = ?'; params.push(worker_id); }
     sql += ' ORDER BY p.paid_at DESC LIMIT ? OFFSET ?';
-    params.push(isNaN(lim) || lim < 0 ? 100 : lim, isNaN(off) || off < 0 ? 0 : off);
+    const safeLim = isNaN(lim) || lim < 0 ? 100 : Math.min(lim, 1000);
+    params.push(safeLim, isNaN(off) || off < 0 ? 0 : off);
     res.json(await query(sql, params));
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -47,14 +51,27 @@ router.post('/', async (req, res) => {
     if (!worker_id || !payment_month || !amount)
       return res.status(400).json({ error: 'Ishchi, oy va miqdor kiritilishi shart' });
 
+    if (!MONTH_RE.test(payment_month))
+      return res.status(400).json({ error: "Oy formati noto'g'ri (YYYY-MM bo'lishi kerak)" });
+
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0)
       return res.status(400).json({ error: "Miqdor 0 dan katta bo'lishi shart" });
 
+    if (signature_photo && !IMAGE_DATA_URL_RE.test(signature_photo))
+      return res.status(400).json({ error: "Imzo rasm formati noto'g'ri" });
+    if (photo_url && !IMAGE_DATA_URL_RE.test(photo_url))
+      return res.status(400).json({ error: "Rasm formati noto'g'ri" });
+
     const worker = await queryOne('SELECT * FROM workers WHERE id = ?', [worker_id]);
     if (!worker) return res.status(404).json({ error: 'Ishchi topilmadi' });
 
-    const finalCurrency = currency || worker.salary_currency;
+    if (family_member_id) {
+      const fm = await queryOne('SELECT id FROM family_members WHERE id = ? AND worker_id = ?', [family_member_id, worker_id]);
+      if (!fm) return res.status(400).json({ error: "Oila a'zosi ushbu ishchiga tegishli emas" });
+    }
+
+    const finalCurrency = currency === 'USD' ? 'USD' : currency === 'UZS' ? 'UZS' : worker.salary_currency;
     const rawType = (payment_type || 'full').toLowerCase();
     const finalType = rawType === 'partial' ? 'partial' : 'full';
 

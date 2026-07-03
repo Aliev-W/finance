@@ -6,8 +6,28 @@ const { query, queryOne } = require('../database');
 const MONTHS_UZ = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr'];
 
 function getMonthName(month) {
-  const [y, m] = month.split('-');
-  return `${MONTHS_UZ[parseInt(m) - 1]} ${y}`;
+  const match = /^(\d{4})-(\d{2})$/.exec(month || '');
+  if (!match) return "Noma'lum oy";
+  const m = parseInt(match[2], 10);
+  if (m < 1 || m > 12) return "Noma'lum oy";
+  return `${MONTHS_UZ[m - 1]} ${match[1]}`;
+}
+
+function escapeHtml(value) {
+  if (value === null || value === undefined) return '';
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Only allow base64 image data URLs (how this app actually generates signatures/photos client-side) —
+// rejects javascript:, http(s):, or any other src that could execute script or leak data on load.
+function safeImageSrc(url) {
+  if (typeof url !== 'string') return '';
+  return /^data:image\/(png|jpe?g|gif|webp);base64,[a-z0-9+/=]+$/i.test(url) ? url : '';
 }
 
 router.get('/excel', async (req, res) => {
@@ -124,8 +144,16 @@ router.get('/excel', async (req, res) => {
     });
 
     sheet.addRow([]);
-    const totalUZS = payments.filter(p => p.currency === 'UZS').reduce((s, p) => s + Number(p.amount), 0);
-    const totalUSD = payments.filter(p => p.currency === 'USD').reduce((s, p) => s + Number(p.amount), 0);
+    // Sum only the payments actually rendered as rows above (active workers) so the
+    // printed total always equals the sum of visible rows — a payment recorded for a
+    // worker who was later deactivated no longer has a row, so it must not be in the total either.
+    let totalUZS = 0, totalUSD = 0;
+    allWorkers.forEach(w => {
+      (payByWorker[w.id] || []).forEach(p => {
+        if (p.currency === 'USD') totalUSD += Number(p.amount);
+        else if (p.currency === 'UZS') totalUZS += Number(p.amount);
+      });
+    });
     if (totalUZS > 0) {
       const r = sheet.addRow(['', "JAMI (So'm):", '', '', totalUZS, 'UZS', '', '', '', '']);
       r.getCell(2).font = { bold: true }; r.getCell(5).font = { bold: true }; r.getCell(5).numFmt = '#,##0';
@@ -164,7 +192,7 @@ router.get('/print', async (req, res) => {
       if (hasFull) paidFull++;
       else if (wp.length > 0) paidPartial++;
       else unpaid++;
-      wp.forEach(p => { if (p.currency === 'UZS') totalUZS += Number(p.amount); else totalUSD += Number(p.amount); });
+      wp.forEach(p => { if (p.currency === 'USD') totalUSD += Number(p.amount); else if (p.currency === 'UZS') totalUZS += Number(p.amount); });
     });
 
     const printDate = new Date().toLocaleDateString('ru-RU');
@@ -179,9 +207,9 @@ router.get('/print', async (req, res) => {
       const statusCls = hasFull ? 'full' : hasPartial ? 'partial' : 'unpaid';
       const statusTxt = hasFull ? "To'liq to'landi" : hasPartial ? "Qisman to'landi" : "To'lanmadi";
       const paidStr = [wUZS > 0 ? wUZS.toLocaleString('ru-RU') + " so'm" : '', wUSD > 0 ? '$' + wUSD.toLocaleString('en-US') : ''].filter(Boolean).join(' + ') || '—';
-      const receiver = wp[0]?.receiver_name || '—';
+      const receiver = escapeHtml(wp[0]?.receiver_name) || '—';
       const payDate = wp[0]?.paid_at ? new Date(wp[0].paid_at).toLocaleDateString('ru-RU') : '—';
-      return `<tr><td>${idx + 1}</td><td><strong>${w.name}</strong></td><td>${w.position || '—'}</td><td>${Number(w.salary_amount).toLocaleString('ru-RU')} ${w.salary_currency}</td><td>${paidStr}</td><td>${receiver}</td><td>${payDate}</td><td><span class="st ${statusCls}">${statusTxt}</span></td></tr>`;
+      return `<tr><td>${idx + 1}</td><td><strong>${escapeHtml(w.name)}</strong></td><td>${escapeHtml(w.position) || '—'}</td><td>${Number(w.salary_amount).toLocaleString('ru-RU')} ${escapeHtml(w.salary_currency)}</td><td>${paidStr}</td><td>${receiver}</td><td>${payDate}</td><td><span class="st ${statusCls}">${statusTxt}</span></td></tr>`;
     }).join('');
 
     const html = `<!DOCTYPE html><html lang="uz"><head><meta charset="UTF-8"><title>Oylik — ${monthName}</title><style>
@@ -254,24 +282,26 @@ router.get('/payment/:id', async (req, res) => {
     const typeLabel = p.payment_type === 'full' ? "To'liq oylik" : "Avans / Qisman";
     const amountFmt = Number(p.amount).toLocaleString('ru-RU') + (p.currency === 'UZS' ? " so'm" : ' $');
 
-    const sigBlock = p.signature_photo
+    const safeSigSrc = safeImageSrc(p.signature_photo);
+    const sigBlock = safeSigSrc
       ? `<div class="img-block">
           <p class="img-lbl">✍️ Imzo</p>
-          <img src="${p.signature_photo}" alt="Imzo" class="sig-img">
+          <img src="${safeSigSrc}" alt="Imzo" class="sig-img">
          </div>`
       : '';
 
-    const photoBlock = p.photo_url
+    const safePhotoSrc = safeImageSrc(p.photo_url);
+    const photoBlock = safePhotoSrc
       ? `<div class="img-block">
           <p class="img-lbl">📷 Rasm</p>
-          <img src="${p.photo_url}" alt="Rasm" class="photo-img">
+          <img src="${safePhotoSrc}" alt="Rasm" class="photo-img">
          </div>`
       : '';
 
     const html = `<!DOCTYPE html><html lang="uz"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kvitansiya #${p.id} — ${p.worker_name}</title>
+<title>Kvitansiya #${p.id} — ${escapeHtml(p.worker_name)}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111;background:#f5f7fa;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:20px}
@@ -323,8 +353,8 @@ body{font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111;background
 
   <div class="section">
     <div class="section-title">Ishchi ma'lumoti</div>
-    <div class="row"><span class="lbl">Ismi:</span><span class="val">${p.worker_name}</span></div>
-    ${p.worker_position ? `<div class="row"><span class="lbl">Lavozimi:</span><span class="val">${p.worker_position}</span></div>` : ''}
+    <div class="row"><span class="lbl">Ismi:</span><span class="val">${escapeHtml(p.worker_name)}</span></div>
+    ${p.worker_position ? `<div class="row"><span class="lbl">Lavozimi:</span><span class="val">${escapeHtml(p.worker_position)}</span></div>` : ''}
     <div class="row"><span class="lbl">Oylik maoshi:</span><span class="val">${Number(p.worker_salary).toLocaleString('ru-RU')} ${p.worker_salary_currency === 'UZS' ? "so'm" : '$'}</span></div>
   </div>
 
@@ -334,7 +364,7 @@ body{font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111;background
     <div class="section-title">To'lov tafsiloti</div>
     <div class="row"><span class="lbl">Oy:</span><span class="val">${monthName}</span></div>
     <div class="row"><span class="lbl">To'lov turi:</span><span class="val"><span class="type-badge ${p.payment_type === 'full' ? 'type-full' : 'type-partial'}">${typeLabel}</span></span></div>
-    ${p.receiver_name ? `<div class="row"><span class="lbl">Qabul qildi:</span><span class="val">${p.receiver_name}${p.receiver_relation ? ' (' + p.receiver_relation + ')' : ''}</span></div>` : ''}
+    ${p.receiver_name ? `<div class="row"><span class="lbl">Qabul qildi:</span><span class="val">${escapeHtml(p.receiver_name)}${p.receiver_relation ? ' (' + escapeHtml(p.receiver_relation) + ')' : ''}</span></div>` : ''}
     <div class="row"><span class="lbl">Sana:</span><span class="val">${dateStr} ${timeStr}</span></div>
   </div>
 

@@ -1,13 +1,25 @@
 import { useState, useRef, useCallback } from 'react';
-import { Camera, Upload, X, CheckCircle, RefreshCw } from 'lucide-react';
+import { Camera, Upload, X, CheckCircle, RefreshCw, AlertCircle } from 'lucide-react';
+
+const MAX_FILE_SIZE = 8 * 1024 * 1024; // 8MB — keeps mobile uploads fast and DB rows reasonable
 
 export default function PhotoCapture({ onFileSelect, label = "Rasm olish (imzo bilan)" }) {
   const [preview, setPreview] = useState(null);
   const [dragOver, setDragOver] = useState(false);
+  const [error, setError] = useState(null);
   const inputRef = useRef(null);
 
   const handleFile = useCallback((file) => {
-    if (!file || !file.type.startsWith('image/')) return;
+    setError(null);
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError("Faqat rasm fayli tanlang");
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      setError(`Rasm hajmi ${Math.round(MAX_FILE_SIZE / 1024 / 1024)}MB dan oshmasligi kerak`);
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (e) => setPreview(e.target.result);
     reader.readAsDataURL(file);
@@ -24,12 +36,18 @@ export default function PhotoCapture({ onFileSelect, label = "Rasm olish (imzo b
 
   const clear = () => {
     setPreview(null);
+    setError(null);
     if (inputRef.current) inputRef.current.value = '';
     onFileSelect(null);
   };
 
   return (
     <div>
+      {error && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2 mb-2 text-sm text-red-600">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
+        </div>
+      )}
       {!preview ? (
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}

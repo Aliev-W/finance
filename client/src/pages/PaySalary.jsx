@@ -39,15 +39,17 @@ export default function PaySalary() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    getWorkers({ active: 1 }).then(setWorkers).catch(() => {});
+    let cancelled = false;
+    getWorkers({ active: 1 }).then(list => { if (!cancelled) setWorkers(list); }).catch(() => {});
+    return () => { cancelled = true; };
   }, []);
 
   const workerId = params.get('worker');
   useEffect(() => {
     if (!workerId) return;
-    getWorker(workerId).then(w => {
-      selectWorker(w);
-    }).catch(() => {});
+    let cancelled = false;
+    getWorker(workerId).then(w => { if (!cancelled) selectWorker(w); }).catch(() => {});
+    return () => { cancelled = true; };
   }, [workerId]);
 
   const selectWorker = useCallback((w) => {
@@ -95,13 +97,19 @@ export default function PaySalary() {
   // Fetch existing payments for selected worker + month
   useEffect(() => {
     if (!selectedWorker) { setExistingPayments([]); return; }
+    let cancelled = false;
     getWorkerReport(selectedWorker.id, form.payment_month)
-      .then(r => setExistingPayments(r.payments || []))
-      .catch(() => setExistingPayments([]));
+      .then(r => { if (!cancelled) setExistingPayments(r.payments || []); })
+      .catch(() => { if (!cancelled) setExistingPayments([]); });
+    return () => { cancelled = true; };
   }, [selectedWorker?.id, form.payment_month]);
 
   const paidThisMonth = existingPayments.reduce((s, p) => {
     if (p.currency === selectedWorker?.salary_currency) return s + Number(p.amount);
+    return s;
+  }, 0);
+  const paidThisMonthOtherCurrency = existingPayments.reduce((s, p) => {
+    if (p.currency !== selectedWorker?.salary_currency) return s + Number(p.amount);
     return s;
   }, 0);
   const remainingSalary = selectedWorker ? Math.max(0, selectedWorker.salary_amount - paidThisMonth) : 0;
@@ -116,6 +124,7 @@ export default function PaySalary() {
     e.preventDefault();
     if (!selectedWorker) { setError('Ishchi tanlang'); return; }
     if (!form.amount || parseFloat(form.amount) <= 0) { setError('Miqdor kiritilishi shart'); return; }
+    if (hasExistingFull) { setError("Bu oy uchun to'liq oylik allaqachon to'langan"); return; }
 
     setSaving(true);
     setError(null);
@@ -283,9 +292,16 @@ export default function PaySalary() {
                 </p>
               ))}
               {remainingSalary > 0 && (
-                <div className="mt-2 pt-2 border-t border-amber-200 flex justify-between items-center">
-                  <span className="text-xs text-amber-700 font-medium">Qolgan oylik:</span>
-                  <span className="text-sm font-bold text-amber-800">{formatMoney(remainingSalary, selectedWorker.salary_currency)}</span>
+                <div className="mt-2 pt-2 border-t border-amber-200">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-amber-700 font-medium">Qolgan oylik:</span>
+                    <span className="text-sm font-bold text-amber-800">{formatMoney(remainingSalary, selectedWorker.salary_currency)}</span>
+                  </div>
+                  {paidThisMonthOtherCurrency > 0 && (
+                    <p className="text-[11px] text-amber-600 mt-1">
+                      * Boshqa valyutadagi to'lov bu hisobga kiritilmagan — yuqoridagi ro'yxatga qarang
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -347,6 +363,17 @@ export default function PaySalary() {
               <AlertCircle className="w-4 h-4 text-orange-500 flex-shrink-0" />
               <p className="text-sm text-orange-700">
                 Jami to'lov maoshdan ({formatMoney(selectedWorker.salary_amount, selectedWorker.salary_currency)}) oshib ketadi!
+              </p>
+            </div>
+          )}
+
+          {selectedWorker && form.currency !== selectedWorker.salary_currency &&
+            form.amount && parseFloat(form.amount) > 0 && (
+            <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2.5">
+              <AlertCircle className="w-4 h-4 text-blue-500 flex-shrink-0" />
+              <p className="text-sm text-blue-700">
+                Diqqat: oylik {formatMoney(selectedWorker.salary_amount, selectedWorker.salary_currency)} da,
+                siz {form.currency === 'USD' ? 'dollarda' : "so'mda"} kirityapsiz — miqdorni qo'lda tekshiring.
               </p>
             </div>
           )}

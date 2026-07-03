@@ -45,10 +45,12 @@ export default function AddWorker() {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) { setError('Ism kiritilishi shart'); return; }
+    const salaryNum = parseFloat(form.salary_amount);
+    if (!isNaN(salaryNum) && salaryNum < 0) { setError("Maosh manfiy bo'lishi mumkin emas"); return; }
     setSaving(true);
     setError(null);
     try {
-      const data = { ...form, salary_amount: parseFloat(form.salary_amount) || 0 };
+      const data = { ...form, salary_amount: isNaN(salaryNum) ? 0 : salaryNum };
       if (isEdit) {
         await updateWorker(id, data);
       } else {
@@ -62,6 +64,11 @@ export default function AddWorker() {
     }
   };
 
+  const closeFamilyModal = () => {
+    setShowFamilyModal(false);
+    setFamilyForm({ name: '', relationship: "O'zi", phone: '', is_primary: false });
+  };
+
   const handleAddFamily = async (e) => {
     e.preventDefault();
     if (!familyForm.name.trim()) return;
@@ -69,8 +76,7 @@ export default function AddWorker() {
     try {
       const member = await addFamilyMember(id, familyForm);
       setFamily(p => [...p, member]);
-      setFamilyForm({ name: '', relationship: "O'zi", phone: '', is_primary: false });
-      setShowFamilyModal(false);
+      closeFamilyModal();
     } catch (e) {
       setError(e.message);
     } finally {
@@ -232,7 +238,7 @@ export default function AddWorker() {
       </form>
 
       {/* Add Family Modal */}
-      <Modal open={showFamilyModal} onClose={() => setShowFamilyModal(false)} title="Oila azosi qo'shish">
+      <Modal open={showFamilyModal} onClose={closeFamilyModal} title="Oila azosi qo'shish">
         <form onSubmit={handleAddFamily} className="space-y-4">
           <div>
             <label className="label">Ism va familiya *</label>

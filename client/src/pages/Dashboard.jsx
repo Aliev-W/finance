@@ -14,7 +14,7 @@ export default function Dashboard() {
 
   const [month, setMonth] = useState(() => {
     const m = searchParams.get('month');
-    return (m && /^\d{4}-\d{2}$/.test(m)) ? m : currentMonth();
+    return (m && /^\d{4}-(0[1-9]|1[0-2])$/.test(m)) ? m : currentMonth();
   });
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);

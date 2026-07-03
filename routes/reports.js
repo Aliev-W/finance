@@ -19,8 +19,16 @@ router.get('/monthly', async (req, res) => {
       byWorker[p.worker_id].push(p);
     });
 
-    let paidFull = 0, paidPartial = 0, unpaid = 0;
+    // Money actually paid out this month — independent of whether the worker
+    // is still active today, so deactivating someone after paying them can't
+    // make their payment vanish from the monthly total.
     let totalUZS = 0, totalUSD = 0;
+    paymentsThisMonth.forEach(p => {
+      if (p.currency === 'USD') totalUSD += Number(p.amount);
+      else totalUZS += Number(p.amount);
+    });
+
+    let paidFull = 0, paidPartial = 0, unpaid = 0;
 
     const workersWithStatus = activeWorkers.map(w => {
       const payments = byWorker[w.id] || [];
@@ -31,11 +39,6 @@ router.get('/monthly', async (req, res) => {
       if (hasFull) { status = 'full'; paidFull++; }
       else if (hasPartial) { status = 'partial'; paidPartial++; }
       else unpaid++;
-
-      payments.forEach(p => {
-        if (p.currency === 'USD') totalUSD += Number(p.amount);
-        else totalUZS += Number(p.amount);
-      });
 
       const totalPaidUZS = payments.filter(p => p.currency === 'UZS').reduce((s, p) => s + Number(p.amount), 0);
       const totalPaidUSD = payments.filter(p => p.currency === 'USD').reduce((s, p) => s + Number(p.amount), 0);

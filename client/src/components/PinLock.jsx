@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Delete } from 'lucide-react';
+import { Delete, Lock } from 'lucide-react';
 
 const MAX_ATTEMPTS = 5;
 const COOLDOWN_MS = 15000;
@@ -51,7 +51,9 @@ export default function PinLock({ onUnlock }) {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-700 to-blue-900 p-8 select-none">
-      <div className="text-5xl mb-3">💰</div>
+      <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center mb-3">
+        <Lock className="w-7 h-7 text-white" />
+      </div>
       <h1 className="text-white font-bold text-2xl mb-1">Oylik Tizimi</h1>
       <p className="text-blue-200 text-sm mb-10">PIN kodingizni kiriting</p>
 
@@ -82,7 +84,7 @@ export default function PinLock({ onUnlock }) {
           if (k === null) return <div key={i} />;
           if (k === 'del') return (
             <button key="del" onClick={del}
-              className="w-18 h-18 w-[72px] h-[72px] rounded-full bg-white/10 text-white flex items-center justify-center active:bg-white/25 transition-colors">
+              className="w-[72px] h-[72px] rounded-full bg-white/10 text-white flex items-center justify-center active:bg-white/25 transition-colors">
               <Delete className="w-5 h-5" />
             </button>
           );

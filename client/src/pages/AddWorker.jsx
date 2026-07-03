@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, UserPlus, Plus, Trash2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, UserPlus, Plus, Trash2, Loader2, Info } from 'lucide-react';
 import { getWorker, createWorker, updateWorker, addFamilyMember, deleteFamilyMember } from '../api';
 import { RELATIONS } from '../utils';
 import Modal from '../components/Modal';
@@ -155,7 +155,7 @@ export default function AddWorker() {
 
         {/* Salary */}
         <div className="card space-y-4">
-          <h2 className="font-semibold text-gray-700 text-sm">💰 Oylik maosh</h2>
+          <h2 className="font-semibold text-gray-700 text-sm">Oylik maosh</h2>
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="label">Miqdor</label>
@@ -188,7 +188,7 @@ export default function AddWorker() {
         {isEdit && (
           <div className="card space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-gray-700 text-sm">👨‍👩‍👧 Oila azolari</h2>
+              <h2 className="font-semibold text-gray-700 text-sm">Oila azolari</h2>
               <button
                 type="button"
                 onClick={() => setShowFamilyModal(true)}
@@ -224,8 +224,8 @@ export default function AddWorker() {
 
         {!isEdit && (
           <div className="card bg-blue-50 border-blue-100">
-            <p className="text-sm text-blue-700">
-              💡 Ishchini saqlangandan so'ng oila azolarini qo'shishingiz mumkin
+            <p className="text-sm text-blue-700 flex items-center gap-2">
+              <Info className="w-4 h-4 flex-shrink-0" /> Ishchini saqlangandan so'ng oila azolarini qo'shishingiz mumkin
             </p>
           </div>
         )}

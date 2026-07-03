@@ -108,11 +108,11 @@ export default function History() {
 
       {/* Summary */}
       {!loading && filteredPayments.length > 0 && (
-        <div className="card bg-gradient-to-r from-blue-600 to-blue-500 text-white">
-          <p className="text-sm text-blue-100 mb-2">Jami to'langan · {filteredPayments.length} ta to'lov</p>
+        <div className="card">
+          <p className="text-sm text-gray-500 mb-2">Jami to'langan · {filteredPayments.length} ta to'lov</p>
           <div className="space-y-1">
-            {totalUZS > 0 && <p className="text-xl font-bold">{formatMoney(totalUZS, 'UZS')}</p>}
-            {totalUSD > 0 && <p className="text-xl font-bold">{formatMoney(totalUSD, 'USD')}</p>}
+            {totalUZS > 0 && <p className="text-2xl font-bold text-gray-900">{formatMoney(totalUZS, 'UZS')}</p>}
+            {totalUSD > 0 && <p className="text-2xl font-bold text-gray-900">{formatMoney(totalUSD, 'USD')}</p>}
           </div>
         </div>
       )}
@@ -220,8 +220,8 @@ function PaymentCard({ payment: p, onViewPhoto, onDelete }) {
         </div>
         <div className="text-right flex-shrink-0">
           <p className="font-bold text-gray-900">{formatMoney(p.amount, p.currency)}</p>
-          <span className={`text-xs font-semibold ${p.payment_type === 'full' ? 'text-green-600' : 'text-yellow-600'}`}>
-            {p.payment_type === 'full' ? "✅ To'liq" : '⏳ Avansi'}
+          <span className={`text-xs font-semibold ${p.payment_type === 'full' ? 'text-green-600' : 'text-amber-600'}`}>
+            {p.payment_type === 'full' ? "To'liq" : 'Avansi'}
           </span>
         </div>
       </div>

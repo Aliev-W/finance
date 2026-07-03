@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, CircleDollarSign, History, HandCoins, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, CircleDollarSign, History, HandCoins, Settings, Wallet } from 'lucide-react';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Bosh sahifa' },
@@ -19,8 +19,8 @@ export default function Layout({ children }) {
       <aside className="hidden md:flex flex-col w-60 bg-white border-r border-gray-100 fixed h-full z-10 shadow-sm">
         <div className="p-5 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white text-xl">
-              💰
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white">
+              <Wallet className="w-5 h-5" />
             </div>
             <div>
               <div className="font-bold text-gray-900 text-sm leading-tight">Oylik Tizimi</div>
@@ -42,7 +42,7 @@ export default function Layout({ children }) {
                 }`
               }
             >
-              <Icon className="w-4.5 h-4.5 w-[18px] h-[18px]" />
+              <Icon className="w-[18px] h-[18px]" />
               {label}
             </NavLink>
           ))}
@@ -75,7 +75,7 @@ export default function Layout({ children }) {
             {({ isActive }) => (
               <>
                 <div className={`p-1 rounded-lg transition-colors ${isActive ? 'bg-blue-50' : ''}`}>
-                  <Icon className="w-4.5 h-4.5 w-[18px] h-[18px]" />
+                  <Icon className="w-[18px] h-[18px]" />
                 </div>
                 <span className="text-[10px] font-medium leading-none">{label}</span>
               </>

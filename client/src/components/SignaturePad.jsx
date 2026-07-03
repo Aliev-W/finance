@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { RotateCcw, CheckCircle } from 'lucide-react';
+import { RotateCcw, CheckCircle, PenLine } from 'lucide-react';
 
 export default function SignaturePad({ onCapture, onClear }) {
   const canvasRef = useRef(null);
@@ -120,7 +120,7 @@ export default function SignaturePad({ onCapture, onClear }) {
         />
         {!hasDrawn && (
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-1">
-            <span className="text-3xl opacity-20">✍️</span>
+            <PenLine className="w-7 h-7 text-gray-300" />
             <p className="text-gray-300 text-sm select-none">Barmoq bilan imzo qo'ying</p>
           </div>
         )}

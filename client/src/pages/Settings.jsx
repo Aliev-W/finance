@@ -5,6 +5,7 @@ import {
   Lock, Unlock, Trash2, CheckCircle, AlertCircle, ChevronRight, Eye, EyeOff, LogOut
 } from 'lucide-react';
 import { downloadBackup, restoreBackup } from '../api';
+import Modal from '../components/Modal';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -104,12 +105,12 @@ export default function Settings() {
           <span className="font-semibold text-gray-700 text-sm">Xavfsizlik</span>
         </div>
         <div className="px-4 pb-2">
-          <div className="flex items-center justify-between bg-gray-50 rounded-xl p-3 mb-3">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               {hasPin ? <Lock className="w-4 h-4 text-green-600" /> : <Unlock className="w-4 h-4 text-gray-400" />}
               <span className="text-sm font-medium text-gray-700">PIN kod</span>
             </div>
-            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${hasPin ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+            <span className={`text-xs font-medium ${hasPin ? 'text-green-600' : 'text-gray-400'}`}>
               {hasPin ? "O'rnatilgan" : "O'rnatilmagan"}
             </span>
           </div>
@@ -172,7 +173,7 @@ export default function Settings() {
             className="hidden"
             onChange={handleRestore}
           />
-          <p className="text-xs text-gray-400">⚠️ Tiklash joriy ma'lumotlarning ustiga yozadi.</p>
+          <p className="text-xs text-gray-400 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> Tiklash joriy ma'lumotlarning ustiga yozadi.</p>
         </div>
       </div>
 
@@ -186,15 +187,7 @@ export default function Settings() {
           onClick={() => navigate('/annual')}
           className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors border-t border-gray-50"
         >
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center">
-              <Calendar className="w-4 h-4 text-blue-600" />
-            </div>
-            <div className="text-left">
-              <p className="font-semibold text-gray-800 text-sm">Yillik ko'rinish</p>
-              <p className="text-xs text-gray-400">12 oylik umumiy hisobot</p>
-            </div>
-          </div>
+          <p className="font-medium text-gray-700 text-sm">Yillik ko'rinish</p>
           <ChevronRight className="w-4 h-4 text-gray-300" />
         </button>
       </div>
@@ -217,64 +210,61 @@ export default function Settings() {
       </div>
 
       {/* PIN Modal */}
-      {pinModal && (
-        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closePin} />
-          <div className="relative bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6">
-            <h2 className="font-bold text-gray-900 text-lg mb-1">
-              {pinModal === 'set' ? 'PIN kod o\'rnatish'
-                : pinModal === 'change' ? 'PIN kodni o\'zgartirish'
-                : 'PIN kodni o\'chirish'}
-            </h2>
-            <p className="text-sm text-gray-400 mb-5">
-              {pinStep === 'verify' ? 'Joriy PIN kodingizni kiriting'
-                : pinStep === 'new' ? 'Yangi 4 xonali PIN kiriting'
-                : 'Yangi PIN kodni tasdiqlang'}
-            </p>
+      <Modal
+        open={!!pinModal}
+        onClose={closePin}
+        size="sm"
+        title={pinModal === 'set' ? 'PIN kod o\'rnatish'
+          : pinModal === 'change' ? 'PIN kodni o\'zgartirish'
+          : 'PIN kodni o\'chirish'}
+      >
+        <p className="text-sm text-gray-400 mb-5">
+          {pinStep === 'verify' ? 'Joriy PIN kodingizni kiriting'
+            : pinStep === 'new' ? 'Yangi 4 xonali PIN kiriting'
+            : 'Yangi PIN kodni tasdiqlang'}
+        </p>
 
-            <div className="relative mb-4">
-              <input
-                type={showPin ? 'text' : 'password'}
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={4}
-                value={pinStep === 'verify' ? oldPin : pinStep === 'new' ? newPin : confirmPin}
-                onChange={e => {
-                  const v = e.target.value.replace(/\D/g, '').slice(0, 4);
-                  if (pinStep === 'verify') setOldPin(v);
-                  else if (pinStep === 'new') setNewPin(v);
-                  else setConfirmPin(v);
-                  setPinError('');
-                }}
-                placeholder="● ● ● ●"
-                className="input-field text-center text-2xl tracking-widest pr-12 font-bold"
-                autoFocus
-                onKeyDown={e => { if (e.key === 'Enter') handlePinNext(); }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPin(p => !p)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
-              >
-                {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-
-            {pinError && (
-              <p className="text-sm text-red-600 mb-3 flex items-center gap-1">
-                <AlertCircle className="w-3.5 h-3.5" /> {pinError}
-              </p>
-            )}
-
-            <div className="flex gap-3">
-              <button onClick={closePin} className="btn-secondary flex-1">Bekor qilish</button>
-              <button onClick={handlePinNext} className={`flex-1 ${pinModal === 'remove' && pinStep === 'verify' ? 'bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2' : 'btn-primary'}`}>
-                {pinModal === 'remove' && pinStep === 'verify' ? (<><Trash2 className="w-4 h-4" /> O'chirish</>) : pinStep === 'confirm' ? 'Saqlash' : 'Keyingi'}
-              </button>
-            </div>
-          </div>
+        <div className="relative mb-4">
+          <input
+            type={showPin ? 'text' : 'password'}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={4}
+            value={pinStep === 'verify' ? oldPin : pinStep === 'new' ? newPin : confirmPin}
+            onChange={e => {
+              const v = e.target.value.replace(/\D/g, '').slice(0, 4);
+              if (pinStep === 'verify') setOldPin(v);
+              else if (pinStep === 'new') setNewPin(v);
+              else setConfirmPin(v);
+              setPinError('');
+            }}
+            placeholder="● ● ● ●"
+            className="input-field text-center text-2xl tracking-widest pr-12 font-bold"
+            autoFocus
+            onKeyDown={e => { if (e.key === 'Enter') handlePinNext(); }}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPin(p => !p)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+          >
+            {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
         </div>
-      )}
+
+        {pinError && (
+          <p className="text-sm text-red-600 mb-3 flex items-center gap-1">
+            <AlertCircle className="w-3.5 h-3.5" /> {pinError}
+          </p>
+        )}
+
+        <div className="flex gap-3">
+          <button onClick={closePin} className="btn-secondary flex-1">Bekor qilish</button>
+          <button onClick={handlePinNext} className={`flex-1 ${pinModal === 'remove' && pinStep === 'verify' ? 'bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2' : 'btn-primary'}`}>
+            {pinModal === 'remove' && pinStep === 'verify' ? (<><Trash2 className="w-4 h-4" /> O'chirish</>) : pinStep === 'confirm' ? 'Saqlash' : 'Keyingi'}
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

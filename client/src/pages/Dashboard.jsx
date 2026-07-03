@@ -260,7 +260,7 @@ export default function Dashboard() {
                     <div className="text-right flex-shrink-0">
                       <p className="font-bold text-gray-900 text-sm">{formatMoney(p.amount, p.currency)}</p>
                       <span className={`text-xs font-medium ${p.payment_type === 'full' ? 'text-green-600' : 'text-amber-600'}`}>
-                        {p.payment_type === 'full' ? "✓ To'liq" : '⏳ Avansi'}
+                        {p.payment_type === 'full' ? "To'liq" : 'Avansi'}
                       </span>
                     </div>
                   </div>
@@ -326,10 +326,9 @@ function WorkerListModal({ title, workers, type, month, onClose, onNavigate }) {
     <div className="fixed inset-0 z-[60] flex items-end justify-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white w-full max-w-lg rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col">
-        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mt-3 mb-1 flex-shrink-0" />
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 flex-shrink-0">
+        <div className="flex items-center justify-between p-5 border-b border-gray-100 flex-shrink-0">
           <div>
-            <h2 className="font-bold text-gray-900 text-base">{title}</h2>
+            <h2 className="font-bold text-gray-900 text-lg">{title}</h2>
             <p className="text-xs text-gray-400 mt-0.5">{month} · {workers.length} ta</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200">
@@ -356,7 +355,7 @@ function WorkerListModal({ title, workers, type, month, onClose, onNavigate }) {
                     <span className="text-xs font-semibold text-gray-700">{formatMoney(w.salary_amount, w.salary_currency)}</span>
                     {type !== 'all' && (
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${c.badge}`}>
-                        {type === 'full' ? "✓ To'liq" : type === 'partial' ? '⏳ Qisman' : "✗ To'lanmadi"}
+                        {type === 'full' ? "To'liq" : type === 'partial' ? 'Qisman' : "To'lanmadi"}
                       </span>
                     )}
                     {w.status === 'partial' && (

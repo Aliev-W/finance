@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Edit, Phone, UserX, UserCheck,
   CircleDollarSign, ChevronLeft, ChevronRight, Loader2, CheckCircle, Clock, XCircle, FileText,
-  Wallet, AlertTriangle
+  Wallet, AlertTriangle, PenLine, Image
 } from 'lucide-react';
 import { getWorker, getWorkerReport, toggleWorkerActive, openPaymentReceipt, getOtherPayments } from '../api';
 import { formatMoney, formatDate, formatDateShort, monthLabel, currentMonth, prevMonth, nextMonth } from '../utils';
@@ -22,6 +22,7 @@ export default function WorkerDetail() {
 
   const [otherPayments, setOtherPayments] = useState([]);
   const [otherLoading, setOtherLoading] = useState(true);
+  const [otherError, setOtherError] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -41,10 +42,11 @@ export default function WorkerDetail() {
 
   const loadOther = useCallback(async () => {
     setOtherLoading(true);
+    setOtherError(false);
     try {
       setOtherPayments(await getOtherPayments({ worker_id: id }));
     } catch (e) {
-      // non-critical section, fail silently
+      setOtherError(true);
     } finally {
       setOtherLoading(false);
     }
@@ -75,7 +77,7 @@ export default function WorkerDetail() {
   if (!worker) return null;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3">
         <button onClick={() => navigate('/workers')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-gray-100 shadow-sm">
@@ -101,7 +103,7 @@ export default function WorkerDetail() {
           <div className="flex-1">
             <h2 className="font-bold text-gray-900 text-lg">{worker.name}</h2>
             <p className="text-gray-500">{worker.position || 'Lavozim ko\'rsatilmagan'}</p>
-            <span className={worker.is_active ? 'badge-green' : 'badge-gray'}>
+            <span className={`text-xs font-medium ${worker.is_active ? 'text-green-500' : 'text-gray-400'}`}>
               {worker.is_active ? '● Faol' : '● Nofaol'}
             </span>
           </div>
@@ -126,7 +128,7 @@ export default function WorkerDetail() {
       {/* Family Members */}
       {worker.family_members?.length > 0 && (
         <div className="card">
-          <h3 className="font-semibold text-gray-700 text-sm mb-3">👨‍👩‍👧 Oila azolari</h3>
+          <h3 className="font-semibold text-gray-700 text-sm mb-3">Oila azolari</h3>
           <div className="space-y-2">
             {worker.family_members.map(m => (
               <div key={m.id} className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
@@ -181,13 +183,13 @@ export default function WorkerDetail() {
           <h3 className="font-semibold text-gray-700 text-sm">To'lovlar tarixi</h3>
           <div className="flex items-center gap-1">
             <button onClick={() => setSelectedMonth(prevMonth(selectedMonth))}
-              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">
               <ChevronLeft className="w-4 h-4 text-gray-500" />
             </button>
             <span className="text-sm font-semibold text-blue-600 min-w-[90px] text-center">{monthLabel(selectedMonth)}</span>
             <button onClick={() => setSelectedMonth(nextMonth(selectedMonth))}
               disabled={selectedMonth >= currentMonth()}
-              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-30">
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-30">
               <ChevronRight className="w-4 h-4 text-gray-500" />
             </button>
           </div>
@@ -222,20 +224,20 @@ export default function WorkerDetail() {
               </div>
             </div>
           ) : (
-            <div className="bg-yellow-50 rounded-xl p-4 mb-3">
+            <div className="bg-amber-50 rounded-xl p-4 mb-3">
               <div className="flex items-center gap-3">
-                <Clock className="w-6 h-6 text-yellow-600 flex-shrink-0" />
+                <Clock className="w-6 h-6 text-amber-600 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="font-semibold text-yellow-700">{monthLabel(selectedMonth)} — Qisman to'landi</p>
-                  <p className="text-xs text-yellow-600 mt-0.5">
+                  <p className="font-semibold text-amber-700">{monthLabel(selectedMonth)} — Qisman to'landi</p>
+                  <p className="text-xs text-amber-600 mt-0.5">
                     Berildi: {totalPaidUZS > 0 && formatMoney(totalPaidUZS, 'UZS')}{totalPaidUZS > 0 && totalPaidUSD > 0 && ' + '}{totalPaidUSD > 0 && formatMoney(totalPaidUSD, 'USD')}
                   </p>
                 </div>
               </div>
               {showRemaining && (
-                <div className="mt-3 pt-3 border-t border-yellow-200 flex items-center justify-between">
-                  <span className="text-sm text-yellow-700 font-medium">Qolgan oylik:</span>
-                  <span className="text-base font-bold text-yellow-800">{formatMoney(remainingSalary, worker.salary_currency)}</span>
+                <div className="mt-3 pt-3 border-t border-amber-200 flex items-center justify-between">
+                  <span className="text-sm text-amber-700 font-medium">Qolgan oylik:</span>
+                  <span className="text-base font-bold text-amber-800">{formatMoney(remainingSalary, worker.salary_currency)}</span>
                 </div>
               )}
             </div>
@@ -246,11 +248,11 @@ export default function WorkerDetail() {
         {monthPayments.length > 0 && (
           <div className="space-y-2">
             {monthPayments.map(p => (
-              <div key={p.id} className="bg-gray-50 rounded-xl p-3 space-y-2">
+              <div key={p.id} className="bg-gray-50 rounded-xl px-4 py-3 space-y-2">
                 {/* Top row: type badge + amount + PDF */}
                 <div className="flex items-center gap-2">
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${
-                    p.payment_type === 'full' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                    p.payment_type === 'full' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
                   }`}>
                     {p.payment_type === 'full' ? "To'liq" : 'Avansi'}
                   </span>
@@ -282,7 +284,7 @@ export default function WorkerDetail() {
                         className="flex-1 flex items-center gap-1.5 border border-gray-200 rounded-xl overflow-hidden bg-white hover:border-blue-300 transition-colors">
                         <img src={p.signature_photo} alt="Imzo"
                           className="w-14 h-10 object-contain bg-gray-50 flex-shrink-0 border-r border-gray-100" />
-                        <span className="text-xs text-gray-500 px-1 truncate">✍️ Imzo</span>
+                        <span className="text-xs text-gray-500 px-1 truncate flex items-center gap-1"><PenLine className="w-3 h-3 flex-shrink-0" /> Imzo</span>
                       </a>
                     )}
                     {p.photo_url && (
@@ -290,7 +292,7 @@ export default function WorkerDetail() {
                         className="flex-1 flex items-center gap-1.5 border border-gray-200 rounded-xl overflow-hidden bg-white hover:border-blue-300 transition-colors">
                         <img src={p.photo_url} alt="Rasm"
                           className="w-14 h-10 object-cover bg-gray-50 flex-shrink-0 border-r border-gray-100" />
-                        <span className="text-xs text-gray-500 px-1 truncate">📷 Rasm</span>
+                        <span className="text-xs text-gray-500 px-1 truncate flex items-center gap-1"><Image className="w-3 h-3 flex-shrink-0" /> Rasm</span>
                       </a>
                     )}
                   </div>
@@ -302,7 +304,15 @@ export default function WorkerDetail() {
       </div>
 
       {/* Other payments (bonus/loan/etc) — unified view outside salary */}
-      {!otherLoading && otherPayments.length > 0 && (
+      {otherError && (
+        <div className="card">
+          <h3 className="font-semibold text-gray-700 text-sm mb-2 flex items-center gap-2">
+            <Wallet className="w-4 h-4 text-indigo-500" /> Boshqa to'lovlar
+          </h3>
+          <p className="text-sm text-gray-400">Yuklashda xatolik yuz berdi</p>
+        </div>
+      )}
+      {!otherLoading && !otherError && otherPayments.length > 0 && (
         <div className="card">
           <h3 className="font-semibold text-gray-700 text-sm mb-3 flex items-center gap-2">
             <Wallet className="w-4 h-4 text-indigo-500" /> Boshqa to'lovlar
@@ -313,7 +323,7 @@ export default function WorkerDetail() {
               const remaining = Number(p.remaining ?? p.amount);
               const isSettled = isLoan && remaining <= 0.01;
               return (
-                <div key={p.id} className={`bg-gray-50 rounded-xl p-3 ${p.is_overdue ? 'border border-red-200 bg-red-50' : ''}`}>
+                <div key={p.id} className={`bg-gray-50 rounded-xl px-4 py-3 ${p.is_overdue ? 'border border-red-200 bg-red-50' : ''}`}>
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="text-xs bg-white border border-gray-200 text-gray-500 px-2 py-0.5 rounded-full flex-shrink-0">{p.category}</span>

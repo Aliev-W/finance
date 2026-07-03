@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Loader2, TrendingUp, Banknote, DollarSign } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { getAnnualReport } from '../api';
 import { formatMoney } from '../utils';
 
@@ -46,18 +46,18 @@ export default function Annual() {
       </div>
 
       {/* Year Selector */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between px-3 py-3">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between px-1.5 py-1.5">
         <button onClick={() => setYear(y => String(parseInt(y) - 1))}
-          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gray-50 transition-colors">
-          <ChevronLeft className="w-5 h-5 text-gray-500" />
+          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors">
+          <ChevronLeft className="w-4 h-4 text-gray-500" />
         </button>
-        <div className="text-center">
-          <div className="font-bold text-gray-900 text-2xl">{year}</div>
-          <div className="text-xs text-gray-400">{year === currentYear ? '● Joriy yil' : 'O\'tgan yil'}</div>
+        <div className="flex items-baseline gap-1.5">
+          <span className="font-bold text-gray-900 text-sm">{year}</span>
+          {year === currentYear && <span className="text-[11px] text-blue-500">● Joriy</span>}
         </div>
         <button onClick={() => setYear(y => String(parseInt(y) + 1))} disabled={year >= currentYear}
-          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-25">
-          <ChevronRight className="w-5 h-5 text-gray-500" />
+          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-25">
+          <ChevronRight className="w-4 h-4 text-gray-500" />
         </button>
       </div>
 
@@ -67,24 +67,11 @@ export default function Annual() {
         <>
           {/* Year totals */}
           {(yearTotalUZS > 0 || yearTotalUSD > 0) && (
-            <div className="bg-blue-600 rounded-2xl p-4 text-white">
-              <div className="flex items-center gap-2 mb-3 opacity-80">
-                <TrendingUp className="w-4 h-4" />
-                <span className="text-sm font-medium">{year} yil jami to'lovlar</span>
-              </div>
-              <div className="space-y-1.5">
-                {yearTotalUZS > 0 && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 opacity-80"><Banknote className="w-3.5 h-3.5" /><span className="text-sm">So'm</span></div>
-                    <span className="font-bold text-lg">{formatMoney(yearTotalUZS, 'UZS')}</span>
-                  </div>
-                )}
-                {yearTotalUSD > 0 && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 opacity-80"><DollarSign className="w-3.5 h-3.5" /><span className="text-sm">Dollar</span></div>
-                    <span className="font-bold text-lg">{formatMoney(yearTotalUSD, 'USD')}</span>
-                  </div>
-                )}
+            <div className="card">
+              <p className="text-sm text-gray-500 mb-2">{year} yil jami to'lovlar</p>
+              <div className="space-y-1">
+                {yearTotalUZS > 0 && <p className="text-2xl font-bold text-gray-900">{formatMoney(yearTotalUZS, 'UZS')}</p>}
+                {yearTotalUSD > 0 && <p className="text-2xl font-bold text-gray-900">{formatMoney(yearTotalUSD, 'USD')}</p>}
               </div>
             </div>
           )}
@@ -93,8 +80,6 @@ export default function Annual() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {(data?.months || []).map((m, idx) => {
               const hasData = m.total_paid > 0;
-              const paidPct = m.total_active > 0 ? (m.paid_full / m.total_active * 100) : 0;
-              const partialPct = m.total_active > 0 ? (m.paid_partial / m.total_active * 100) : 0;
               const isFuture = m.month > `${currentYear}-${String(new Date().getMonth() + 1).padStart(2,'0')}`;
               const isCurrent = m.month === `${currentYear}-${String(new Date().getMonth() + 1).padStart(2,'0')}`;
 
@@ -102,42 +87,33 @@ export default function Annual() {
                 <button
                   key={m.month}
                   onClick={() => navigate(`/?month=${m.month}`)}
-                  className={`bg-white rounded-2xl border shadow-sm p-4 text-left transition-all hover:shadow-md active:scale-[0.98] ${
-                    isCurrent ? 'border-blue-200 ring-1 ring-blue-300' : 'border-gray-100'
-                  }`}
+                  className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-left transition-all hover:shadow-md active:scale-[0.98]"
                 >
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-baseline gap-1.5 mb-1">
                     <span className={`font-bold text-base ${isFuture ? 'text-gray-300' : 'text-gray-900'}`}>
                       {MONTHS_UZ[idx]}
                     </span>
-                    {isCurrent && <span className="text-xs bg-blue-100 text-blue-600 font-semibold px-2 py-0.5 rounded-full">Joriy</span>}
+                    {isCurrent && <span className="text-[11px] text-blue-500">● Joriy</span>}
                   </div>
 
                   {isFuture ? (
                     <p className="text-xs text-gray-300">Hali kelmagan</p>
+                  ) : !hasData ? (
+                    <p className="text-xs text-gray-300">To'lovlar yo'q</p>
                   ) : (
                     <>
-                      {/* Progress */}
-                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden flex mb-2">
-                        <div className="h-full bg-green-500" style={{width: `${paidPct}%`}} />
-                        <div className="h-full bg-amber-400" style={{width: `${partialPct}%`}} />
-                      </div>
-
-                      <div className="flex items-center gap-3 text-xs">
+                      <div className="flex items-center gap-3 text-xs mb-1">
                         <span className="text-green-600 font-semibold">{m.paid_full} to'liq</span>
                         {m.paid_partial > 0 && <span className="text-amber-600">{m.paid_partial} qisman</span>}
                         {m.unpaid > 0 && <span className="text-red-400">{m.unpaid} to'lanmadi</span>}
                       </div>
 
                       {(m.total_uzs > 0 || m.total_usd > 0) && (
-                        <div className="mt-2 pt-2 border-t border-gray-50 space-y-0.5">
-                          {m.total_uzs > 0 && <p className="text-xs text-gray-500 font-medium">{formatMoney(m.total_uzs, 'UZS')}</p>}
-                          {m.total_usd > 0 && <p className="text-xs text-gray-500 font-medium">{formatMoney(m.total_usd, 'USD')}</p>}
-                        </div>
-                      )}
-
-                      {!hasData && (
-                        <p className="text-xs text-gray-300 mt-1">To'lovlar yo'q</p>
+                        <p className="text-xs text-gray-500 font-medium">
+                          {m.total_uzs > 0 && formatMoney(m.total_uzs, 'UZS')}
+                          {m.total_uzs > 0 && m.total_usd > 0 && ' · '}
+                          {m.total_usd > 0 && formatMoney(m.total_usd, 'USD')}
+                        </p>
                       )}
                     </>
                   )}

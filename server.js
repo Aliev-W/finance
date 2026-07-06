@@ -11,6 +11,10 @@ const APP_USERNAME = process.env.APP_USERNAME || 'admin';
 const APP_PASSWORD = process.env.APP_PASSWORD || 'admin123';
 const SECRET_KEY = process.env.SECRET_KEY || 'salary-secret-2024';
 
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOGIN_LOCKOUT_MS = 15 * 60 * 1000;
+const loginAttempts = new Map(); // ip -> { count, lockedUntil }
+
 function generateToken() {
   return crypto.createHmac('sha256', SECRET_KEY)
     .update(APP_USERNAME + ':' + APP_PASSWORD)
@@ -25,6 +29,8 @@ function checkToken(req) {
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+app.set('trust proxy', 1);
 
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS
@@ -53,12 +59,25 @@ app.post('/api/upload', upload.single('photo'), (req, res) => {
 app.get('/api/ping', (req, res) => res.json({ ok: true }));
 
 app.post('/api/auth/login', (req, res) => {
+  const ip = req.ip || 'unknown';
+  const state = loginAttempts.get(ip) || { count: 0, lockedUntil: 0 };
+
+  if (state.lockedUntil > Date.now()) {
+    const minutesLeft = Math.ceil((state.lockedUntil - Date.now()) / 60000);
+    return res.status(429).json({ error: `Juda ko'p urinish. ${minutesLeft} daqiqadan keyin qayta urinib ko'ring` });
+  }
+
   const { username, password } = req.body;
   if (username === APP_USERNAME && password === APP_PASSWORD) {
-    res.json({ token: generateToken(), username: APP_USERNAME });
-  } else {
-    res.status(401).json({ error: "Noto'g'ri login yoki parol" });
+    loginAttempts.delete(ip);
+    return res.json({ token: generateToken(), username: APP_USERNAME });
   }
+
+  const count = state.count + 1;
+  loginAttempts.set(ip, count >= MAX_LOGIN_ATTEMPTS
+    ? { count: 0, lockedUntil: Date.now() + LOGIN_LOCKOUT_MS }
+    : { count, lockedUntil: 0 });
+  res.status(401).json({ error: "Noto'g'ri login yoki parol" });
 });
 
 app.get('/api/auth/check', (req, res) => {
@@ -101,8 +120,22 @@ function getLocalIP() {
   return 'localhost';
 }
 
+function warnIfDefaultCredentials() {
+  if (process.env.NODE_ENV !== 'production') return;
+  const usingDefaults = [];
+  if (!process.env.APP_USERNAME) usingDefaults.push('APP_USERNAME');
+  if (!process.env.APP_PASSWORD) usingDefaults.push('APP_PASSWORD');
+  if (!process.env.SECRET_KEY) usingDefaults.push('SECRET_KEY');
+  if (usingDefaults.length) {
+    console.warn('\n⚠️  OGOHLANTIRISH: production muhitida standart (himoyasiz) qiymatlar ishlatilmoqda:');
+    console.warn('⚠️  ' + usingDefaults.join(', '));
+    console.warn("⚠️  Render Dashboard → Environment bo'limida ushbu o'zgaruvchilarni albatta o'rnating!\n");
+  }
+}
+
 async function main() {
   try {
+    warnIfDefaultCredentials();
     await initDB();
     console.log('Malumotlar bazasi tayyor.');
 

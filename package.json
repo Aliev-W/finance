@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "build": "node client/generate-icons.js && cd client && npm install && npm run build"
+    "build": "node client/generate-icons.cjs && cd client && npm install && npm run build"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",

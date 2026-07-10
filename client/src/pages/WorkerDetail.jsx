@@ -6,7 +6,7 @@ import {
   Wallet, AlertTriangle, PenLine, Image
 } from 'lucide-react';
 import { getWorker, getWorkerReport, toggleWorkerActive, openPaymentReceipt, getOtherPayments } from '../api';
-import { formatMoney, formatDate, formatDateShort, monthLabel, currentMonth, prevMonth, nextMonth } from '../utils';
+import { formatMoney, formatDate, formatDateShort, monthLabel, currentMonth, prevMonth, nextMonth, paymentTypeLabel } from '../utils';
 import { ConfirmModal } from '../components/Modal';
 
 export default function WorkerDetail() {
@@ -133,7 +133,7 @@ export default function WorkerDetail() {
             {worker.family_members.map(m => (
               <div key={m.id} className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
                 <div className="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center text-blue-700 font-bold text-sm flex-shrink-0">
-                  {m.name.charAt(0)}
+                  {m.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-gray-900 text-sm">{m.name}</p>
@@ -149,7 +149,7 @@ export default function WorkerDetail() {
           </div>
           <button
             onClick={() => navigate(`/workers/${id}/edit`)}
-            className="mt-3 text-xs text-blue-600 font-medium"
+            className="inline-flex items-center gap-1 mt-3 py-2 text-xs text-blue-600 font-semibold"
           >
             + Oila azosi qo'shish
           </button>
@@ -183,13 +183,13 @@ export default function WorkerDetail() {
           <h3 className="font-semibold text-gray-700 text-sm">To'lovlar tarixi</h3>
           <div className="flex items-center gap-1">
             <button onClick={() => setSelectedMonth(prevMonth(selectedMonth))}
-              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">
+              className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">
               <ChevronLeft className="w-4 h-4 text-gray-500" />
             </button>
             <span className="text-sm font-semibold text-blue-600 min-w-[90px] text-center">{monthLabel(selectedMonth)}</span>
             <button onClick={() => setSelectedMonth(nextMonth(selectedMonth))}
               disabled={selectedMonth >= currentMonth()}
-              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-30">
+              className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-30">
               <ChevronRight className="w-4 h-4 text-gray-500" />
             </button>
           </div>
@@ -254,13 +254,13 @@ export default function WorkerDetail() {
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${
                     p.payment_type === 'full' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
                   }`}>
-                    {p.payment_type === 'full' ? "To'liq" : 'Avansi'}
+                    {paymentTypeLabel(p.payment_type)}
                   </span>
                   <span className="font-bold text-gray-900 text-sm flex-1">{formatMoney(p.amount, p.currency)}</span>
                   <button
                     onClick={() => openPaymentReceipt(p.id)}
                     title="PDF Kvitansiya"
-                    className="flex items-center gap-1 text-xs text-blue-600 font-medium bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-lg transition-colors"
+                    className="flex items-center gap-1 text-xs text-blue-600 font-medium bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg transition-colors"
                   >
                     <FileText className="w-3.5 h-3.5" /> PDF
                   </button>
@@ -304,6 +304,15 @@ export default function WorkerDetail() {
       </div>
 
       {/* Other payments (bonus/loan/etc) — unified view outside salary */}
+      {otherLoading && (
+        <div className="card animate-pulse">
+          <div className="h-4 w-32 bg-gray-100 rounded mb-3" />
+          <div className="space-y-2">
+            <div className="h-12 bg-gray-50 rounded-xl" />
+            <div className="h-12 bg-gray-50 rounded-xl" />
+          </div>
+        </div>
+      )}
       {otherError && (
         <div className="card">
           <h3 className="font-semibold text-gray-700 text-sm mb-2 flex items-center gap-2">
@@ -316,7 +325,7 @@ export default function WorkerDetail() {
         </div>
       )}
       {!otherLoading && !otherError && otherPayments.length > 0 && (
-        <div className="card">
+        <div className="card page-enter">
           <h3 className="font-semibold text-gray-700 text-sm mb-3 flex items-center gap-2">
             <Wallet className="w-4 h-4 text-indigo-500" /> Boshqa to'lovlar
           </h3>
@@ -326,7 +335,7 @@ export default function WorkerDetail() {
               const remaining = Number(p.remaining ?? p.amount);
               const isSettled = isLoan && remaining <= 0.01;
               return (
-                <div key={p.id} className={`bg-gray-50 rounded-xl px-4 py-3 ${p.is_overdue ? 'border border-red-200 bg-red-50' : ''}`}>
+                <div key={p.id} className={`${p.is_overdue ? 'border border-red-200 bg-red-50' : 'bg-gray-50'} rounded-xl px-4 py-3`}>
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="text-xs bg-white border border-gray-200 text-gray-500 px-2 py-0.5 rounded-full flex-shrink-0">{p.category}</span>

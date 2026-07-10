@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Filter, Image, Trash2, Loader2, AlertCircle, Receipt, X, ChevronDown,
-  User, MessageSquare, Clock, Banknote, Search
+  User, MessageSquare, Clock, Search
 } from 'lucide-react';
 import { getPayments, getWorkers, deletePayment } from '../api';
-import { formatMoney, formatDate, currentMonth, MONTHS_LIST, monthLabel } from '../utils';
+import { formatMoney, formatDate, currentMonth, MONTHS_LIST, monthLabel, paymentTypeLabel } from '../utils';
 import { ConfirmModal } from '../components/Modal';
 
 export default function History() {
@@ -71,27 +71,33 @@ export default function History() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2">
-        <select
-          value={month}
-          onChange={e => setMonth(e.target.value)}
-          className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          <option value="all">Umumiy (barcha vaqt)</option>
-          {MONTHS_LIST().map(m => (
-            <option key={m.value} value={m.value}>{m.label}</option>
-          ))}
-        </select>
-        <select
-          value={workerId}
-          onChange={e => setWorkerId(e.target.value)}
-          className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          <option value="">Barcha ishchilar</option>
-          {workers.map(w => (
-            <option key={w.id} value={w.id}>{w.name}</option>
-          ))}
-        </select>
+      <div>
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 mb-1.5">
+          <Filter className="w-3.5 h-3.5" />
+          Filtr
+        </div>
+        <div className="flex gap-2">
+          <select
+            value={month}
+            onChange={e => setMonth(e.target.value)}
+            className="input-field flex-1"
+          >
+            <option value="all">Umumiy (barcha vaqt)</option>
+            {MONTHS_LIST().map(m => (
+              <option key={m.value} value={m.value}>{m.label}</option>
+            ))}
+          </select>
+          <select
+            value={workerId}
+            onChange={e => setWorkerId(e.target.value)}
+            className="input-field flex-1"
+          >
+            <option value="">Barcha ishchilar</option>
+            {workers.map(w => (
+              <option key={w.id} value={w.id}>{w.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Search */}
@@ -102,8 +108,18 @@ export default function History() {
           placeholder="Ishchi, qabul qiluvchi yoki izoh bo'yicha qidirish..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="input-field pl-11"
+          className="input-field pl-11 pr-11"
         />
+        {search && (
+          <button
+            type="button"
+            onClick={() => setSearch('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600"
+            aria-label="Qidiruvni tozalash"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* Summary */}
@@ -119,7 +135,7 @@ export default function History() {
 
       {error && (
         <div className="card flex items-center gap-3 text-red-600 bg-red-50 border-red-100">
-          <AlertCircle className="w-5 h-5" />
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
           <span className="text-sm">{error}</span>
         </div>
       )}
@@ -221,7 +237,7 @@ function PaymentCard({ payment: p, onViewPhoto, onDelete }) {
         <div className="text-right flex-shrink-0">
           <p className="font-bold text-gray-900">{formatMoney(p.amount, p.currency)}</p>
           <span className={`text-xs font-semibold ${p.payment_type === 'full' ? 'text-green-600' : 'text-amber-600'}`}>
-            {p.payment_type === 'full' ? "To'liq" : 'Avansi'}
+            {paymentTypeLabel(p.payment_type)}
           </span>
         </div>
       </div>
@@ -229,7 +245,7 @@ function PaymentCard({ payment: p, onViewPhoto, onDelete }) {
       <div className="mt-3 pt-3 border-t border-gray-100">
         <button
           onClick={() => setExpanded(e => !e)}
-          className="w-full flex items-center justify-between"
+          className="w-full flex items-center justify-between py-1.5"
         >
           <div className="flex items-center gap-1.5 text-xs text-gray-400">
             <Clock className="w-3.5 h-3.5" />
@@ -239,7 +255,7 @@ function PaymentCard({ payment: p, onViewPhoto, onDelete }) {
             {(p.photo_url || p.signature_photo) && (
               <button
                 onClick={e => { e.stopPropagation(); onViewPhoto(); }}
-                className="flex items-center gap-1 text-xs text-blue-600 font-semibold bg-blue-50 px-2.5 py-1 rounded-lg"
+                className="flex items-center gap-1 text-xs text-blue-600 font-semibold bg-blue-50 px-2.5 py-1.5 rounded-lg"
               >
                 <Image className="w-3.5 h-3.5" /> Rasm
               </button>
@@ -258,7 +274,7 @@ function PaymentCard({ payment: p, onViewPhoto, onDelete }) {
                   <User className="w-3.5 h-3.5 text-gray-400" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs text-gray-400 leading-none mb-0.5">Qabul qildi</p>
+                  <p className="text-xs text-gray-500 leading-none mb-0.5">Qabul qildi</p>
                   <p className="text-sm font-semibold text-gray-800 leading-tight">
                     {p.receiver_name}
                     {p.receiver_relation && (
@@ -274,7 +290,7 @@ function PaymentCard({ payment: p, onViewPhoto, onDelete }) {
                   <MessageSquare className="w-3.5 h-3.5 text-gray-400" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs text-gray-400 leading-none mb-0.5">Izoh</p>
+                  <p className="text-xs text-gray-500 leading-none mb-0.5">Izoh</p>
                   <p className="text-sm text-gray-700 leading-snug">{p.notes}</p>
                 </div>
               </div>

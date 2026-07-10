@@ -1,7 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 
 export default function Modal({ open, onClose, title, children, size = 'md' }) {
+  const [show, setShow] = useState(false);
+
   useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
@@ -18,6 +20,14 @@ export default function Modal({ open, onClose, title, children, size = 'md' }) {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [open, onClose]);
 
+  useEffect(() => {
+    if (open) {
+      const raf = requestAnimationFrame(() => setShow(true));
+      return () => cancelAnimationFrame(raf);
+    }
+    setShow(false);
+  }, [open]);
+
   if (!open) return null;
 
   const sizeClass = {
@@ -30,16 +40,16 @@ export default function Modal({ open, onClose, title, children, size = 'md' }) {
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-200 ease-out ${show ? 'opacity-100' : 'opacity-0'}`}
         onClick={onClose}
       />
-      <div className={`relative bg-white w-full ${sizeClass} rounded-t-3xl sm:rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto`}>
+      <div className={`relative bg-white w-full ${sizeClass} rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto transition-all duration-200 ease-out ${show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 sm:translate-y-0'}`}>
         {title && (
-          <div className="sticky top-0 bg-white flex items-center justify-between p-5 border-b border-gray-100 rounded-t-3xl sm:rounded-t-2xl">
+          <div className="sticky top-0 bg-white flex items-center justify-between p-5 border-b border-gray-100 rounded-t-2xl">
             <h2 className="font-bold text-lg text-gray-900">{title}</h2>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
             >
               <X className="w-4 h-4 text-gray-600" />
             </button>

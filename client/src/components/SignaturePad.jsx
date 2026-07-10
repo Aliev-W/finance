@@ -20,6 +20,20 @@ export default function SignaturePad({ onCapture, onClear }) {
     }, 'image/png');
   }, [onCapture]);
 
+  // Size the canvas backing store to match its actual rendered box (scaled by
+  // devicePixelRatio for sharpness) so X/Y touch coordinates map 1:1 — fixes
+  // non-uniform stretching that occurred when the fixed 800x180 backing
+  // resolution didn't match the rendered (full-width x 130px) aspect ratio.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+  }, []);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -29,13 +43,14 @@ export default function SignaturePad({ onCapture, onClear }) {
     ctx.lineJoin = 'round';
 
     function getPos(e) {
+      // Canvas backing store is scaled by devicePixelRatio (see sizing effect
+      // above) and the context transform already accounts for it, so drawing
+      // coordinates are simply CSS-pixel-relative to the element's box.
       const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
       const src = e.touches ? e.touches[0] : e;
       return {
-        x: (src.clientX - rect.left) * scaleX,
-        y: (src.clientY - rect.top) * scaleY,
+        x: src.clientX - rect.left,
+        y: src.clientY - rect.top,
       };
     }
 
@@ -121,7 +136,7 @@ export default function SignaturePad({ onCapture, onClear }) {
         {!hasDrawn && (
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-1">
             <PenLine className="w-7 h-7 text-gray-300" />
-            <p className="text-gray-300 text-sm select-none">Barmoq bilan imzo qo'ying</p>
+            <p className="text-gray-500 text-sm select-none">Barmoq bilan imzo qo'ying</p>
           </div>
         )}
         {saved && (

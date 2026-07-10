@@ -6,7 +6,7 @@ import {
   ArrowRight, Phone, X, FileSpreadsheet, Printer, Bell, Settings
 } from 'lucide-react';
 import { getMonthlyReport, downloadExcel, openPrintReport } from '../api';
-import { currentMonth, monthLabel, prevMonth, nextMonth, formatMoney, formatDate } from '../utils';
+import { currentMonth, monthLabel, prevMonth, nextMonth, formatMoney, formatDate, paymentTypeLabel } from '../utils';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -79,10 +79,10 @@ export default function Dashboard() {
           <p className="text-sm text-gray-400">Oylik to'lovlar holati</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => navigate('/settings')} className="p-2 rounded-xl bg-white border border-gray-100 shadow-sm hover:bg-gray-50 active:bg-gray-100 transition-colors">
+          <button onClick={() => navigate('/settings')} className="md:hidden p-2.5 rounded-xl bg-white border border-gray-100 shadow-sm hover:bg-gray-50 active:bg-gray-100 transition-colors">
             <Settings className="w-4 h-4 text-gray-500" />
           </button>
-          <button onClick={load} className="p-2 rounded-xl bg-white border border-gray-100 shadow-sm hover:bg-gray-50 active:bg-gray-100 transition-colors">
+          <button onClick={load} className="p-2.5 rounded-xl bg-white border border-gray-100 shadow-sm hover:bg-gray-50 active:bg-gray-100 transition-colors">
             <RefreshCw className={`w-4 h-4 text-gray-500 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
@@ -102,7 +102,7 @@ export default function Dashboard() {
       {/* Month Selector */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between px-1.5 py-1.5">
         <button onClick={() => setMonth(prevMonth(month))}
-          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors">
+          className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors">
           <ChevronLeft className="w-4 h-4 text-gray-500" />
         </button>
         <div className="flex items-baseline gap-1.5">
@@ -110,7 +110,7 @@ export default function Dashboard() {
           {month === currentMonth() && <span className="text-[11px] text-blue-500">● Joriy</span>}
         </div>
         <button onClick={() => canGoNext && setMonth(nextMonth(month))} disabled={!canGoNext}
-          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-25">
+          className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-25">
           <ChevronRight className="w-4 h-4 text-gray-500" />
         </button>
       </div>
@@ -209,7 +209,7 @@ export default function Dashboard() {
                     }`}>
                       {w.name.charAt(0)}
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate(`/workers/${w.id}`)}>
                       <p className="font-semibold text-gray-900 text-sm truncate">{w.name}</p>
                       <p className="text-xs text-gray-400 truncate">{w.position || '—'}</p>
                       {w.status === 'partial' && w.salary_currency && (
@@ -225,8 +225,8 @@ export default function Dashboard() {
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button
-                        onClick={() => navigate(`/pay?worker=${w.id}&month=${month}`)}
-                        className="bg-blue-600 text-white text-xs font-semibold px-3 py-2 rounded-xl hover:bg-blue-700 active:bg-blue-800 transition-colors"
+                        onClick={(e) => { e.stopPropagation(); navigate(`/pay?worker=${w.id}&month=${month}`); }}
+                        className="bg-blue-600 text-white text-sm font-semibold px-3 py-2.5 rounded-xl hover:bg-blue-700 active:bg-blue-800 transition-colors"
                       >
                         To'lash
                       </button>
@@ -253,14 +253,14 @@ export default function Dashboard() {
                     <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center font-bold text-green-700 text-sm flex-shrink-0">
                       {(p.worker_name || '?').charAt(0)}
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate(`/workers/${p.worker_id}`)}>
                       <p className="font-semibold text-gray-900 text-sm truncate">{p.worker_name}</p>
                       <p className="text-xs text-gray-400">{formatDate(p.paid_at)}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
                       <p className="font-bold text-gray-900 text-sm">{formatMoney(p.amount, p.currency)}</p>
                       <span className={`text-xs font-medium ${p.payment_type === 'full' ? 'text-green-600' : 'text-amber-600'}`}>
-                        {p.payment_type === 'full' ? "To'liq" : 'Avansi'}
+                        {paymentTypeLabel(p.payment_type)}
                       </span>
                     </div>
                   </div>
@@ -322,16 +322,22 @@ function WorkerListModal({ title, workers, type, month, onClose, onNavigate }) {
     return () => { document.body.style.overflow = ''; };
   }, []);
 
+  useEffect(() => {
+    const onKeyDown = e => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center">
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white w-full max-w-lg rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col">
-        <div className="flex items-center justify-between p-5 border-b border-gray-100 flex-shrink-0">
+      <div className="relative bg-white w-full max-w-lg rounded-t-3xl sm:rounded-2xl shadow-xl max-h-[85vh] flex flex-col">
+        <div className="flex items-center justify-between p-5 border-b border-gray-100 flex-shrink-0 sm:rounded-t-2xl">
           <div>
             <h2 className="font-bold text-gray-900 text-lg">{title}</h2>
-            <p className="text-xs text-gray-400 mt-0.5">{month} · {workers.length} ta</p>
+            <p className="text-xs text-gray-400 mt-0.5">{monthLabel(month)} · {workers.length} ta</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200">
+          <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200">
             <X className="w-4 h-4 text-gray-600" />
           </button>
         </div>
@@ -355,7 +361,7 @@ function WorkerListModal({ title, workers, type, month, onClose, onNavigate }) {
                     <span className="text-xs font-semibold text-gray-700">{formatMoney(w.salary_amount, w.salary_currency)}</span>
                     {type !== 'all' && (
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${c.badge}`}>
-                        {type === 'full' ? "To'liq" : type === 'partial' ? 'Qisman' : "To'lanmadi"}
+                        {type === 'full' ? "To'liq" : type === 'partial' ? 'Qisman' : "To'lanmagan"}
                       </span>
                     )}
                     {w.status === 'partial' && (
@@ -370,14 +376,14 @@ function WorkerListModal({ title, workers, type, month, onClose, onNavigate }) {
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   {w.phone && (
-                    <a href={`tel:${w.phone}`} className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200">
+                    <a href={`tel:${w.phone}`} className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200">
                       <Phone className="w-3.5 h-3.5 text-gray-600" />
                     </a>
                   )}
                   {(type === 'unpaid' || type === 'partial') && (
                     <button
                       onClick={() => { onNavigate(`/pay?worker=${w.id}&month=${month}`); onClose(); }}
-                      className="bg-blue-600 text-white text-xs font-semibold px-3 py-2 rounded-xl hover:bg-blue-700 transition-colors"
+                      className="bg-blue-600 text-white text-sm font-semibold px-3 py-2.5 rounded-xl hover:bg-blue-700 transition-colors"
                     >
                       To'lash
                     </button>

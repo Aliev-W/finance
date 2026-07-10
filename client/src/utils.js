@@ -54,16 +54,8 @@ export function formatDateShort(dateStr) {
   return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-export function statusLabel(status) {
-  if (status === 'full') return "To'liq to'landi";
-  if (status === 'partial') return "Qisman to'landi";
-  return "To'lanmadi";
-}
-
-export function statusClass(status) {
-  if (status === 'full') return 'badge-green';
-  if (status === 'partial') return 'badge-yellow';
-  return 'badge-red';
+export function paymentTypeLabel(paymentType) {
+  return paymentType === 'full' ? "To'liq" : 'Qisman';
 }
 
 export const RELATIONS = [

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, X, Loader2, AlertCircle, HandCoins, Trash2 } from 'lucide-react';
+import { Plus, X, Loader2, AlertCircle, HandCoins, Trash2, ChevronDown } from 'lucide-react';
 import {
   createOtherPayment, deleteOtherPayment, getWorkers,
   getLoanRepayments, addLoanRepayment, deleteLoanRepayment, getDebtsSummary
@@ -227,7 +227,7 @@ export default function OtherPayments() {
             {filteredDebtTotals.UZS > 0 && <span className="text-3xl font-bold text-gray-900 leading-tight">{formatMoney(filteredDebtTotals.UZS, 'UZS')}</span>}
             {filteredDebtTotals.USD > 0 && <span className="text-3xl font-bold text-gray-900 leading-tight">{formatMoney(filteredDebtTotals.USD, 'USD')}</span>}
             {filteredDebtTotals.UZS === undefined && filteredDebtTotals.USD === undefined && (
-              <span className="text-lg font-semibold text-gray-300">Qarz yo'q</span>
+              <span className="text-lg font-semibold text-gray-500">Qarz yo'q</span>
             )}
           </div>
           <p className="text-xs text-gray-400 mt-0.5">
@@ -346,6 +346,7 @@ function DebtRow({ debt: p, onDelete, onChanged }) {
             <p className="font-semibold text-gray-900 text-sm truncate">{p.recipient_name}</p>
             <p className="text-xs text-gray-400">{formatDateShort(p.paid_at)}</p>
           </div>
+          <ChevronDown className={`w-3.5 h-3.5 text-gray-300 flex-shrink-0 transition-transform ${showHistory ? 'rotate-180' : ''}`} />
         </button>
         <div className="text-right flex-shrink-0">
           <p className="font-bold text-gray-900 text-sm leading-tight">{formatMoney(remaining, p.currency)}</p>
@@ -362,14 +363,16 @@ function DebtRow({ debt: p, onDelete, onChanged }) {
             setRepayCurrency(p.currency);
             setRepayEquivalent('');
           }}
-          className="text-xs text-blue-600 font-semibold bg-blue-50 px-3 py-1.5 rounded-lg flex-shrink-0"
+          className={`text-xs font-semibold px-3 py-2.5 rounded-lg flex-shrink-0 transition-colors ${
+            showRepayForm ? 'bg-blue-600 text-white' : 'text-blue-600 bg-blue-50'
+          }`}
         >
-          Qaytarish
+          {showRepayForm ? 'Bekor qilish' : 'Qaytarish'}
         </button>
       </div>
 
       {showRepayForm && (
-        <form onSubmit={handleRepay} className="mt-3 flex flex-col gap-2 pl-12">
+        <form onSubmit={handleRepay} className="mt-3 flex flex-col gap-2 pl-12 page-enter">
           {repayError && <p className="text-xs text-red-600">{repayError}</p>}
           <div className="flex gap-2">
             <input
@@ -379,7 +382,7 @@ function DebtRow({ debt: p, onDelete, onChanged }) {
               autoFocus
               value={repayAmount}
               onChange={e => setRepayAmount(e.target.value)}
-              placeholder={isCrossCurrency ? '0' : `Max ${remaining}`}
+              placeholder={isCrossCurrency ? '0' : `Max ${formatMoney(remaining, p.currency)}`}
               className="input-field py-2 text-sm flex-1"
             />
             <select
@@ -416,7 +419,7 @@ function DebtRow({ debt: p, onDelete, onChanged }) {
       )}
 
       {showHistory && (
-        <div className="mt-3 ml-12 pl-3 border-l-2 border-gray-100 space-y-2.5">
+        <div className="mt-3 ml-12 pl-3 border-l-2 border-gray-100 space-y-2.5 page-enter">
           <div className="flex items-center justify-between text-xs">
             <span className="text-gray-600">
               <span className="text-gray-400">Qarz berildi</span> · {formatDateShort(p.paid_at)}
@@ -438,7 +441,7 @@ function DebtRow({ debt: p, onDelete, onChanged }) {
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-green-700">{formatMoney(r.amount, p.currency)}</span>
-                    <button onClick={() => setDeleteRepayId(r.id)} className="text-red-400 flex-shrink-0">
+                    <button onClick={() => setDeleteRepayId(r.id)} className="text-red-400 p-2 -m-2 flex-shrink-0">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>

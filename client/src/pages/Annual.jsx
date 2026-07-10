@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import { getAnnualReport } from '../api';
 import { formatMoney } from '../utils';
 
@@ -11,6 +11,7 @@ export default function Annual() {
   const [year, setYear] = useState(String(new Date().getFullYear()));
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const currentYear = String(new Date().getFullYear());
 
@@ -19,8 +20,10 @@ export default function Annual() {
     try {
       const r = await getAnnualReport(year);
       setData(r);
+      setError(null);
     } catch {
       setData(null);
+      setError("Yillik hisobotni yuklab bo'lmadi. Internetni tekshirib, qayta urinib ko'ring.");
     } finally {
       setLoading(false);
     }
@@ -41,14 +44,14 @@ export default function Annual() {
         </button>
         <div>
           <h1 className="text-xl font-bold text-gray-900">Yillik ko'rinish</h1>
-          <p className="text-sm text-gray-400">12 oylik umumiy hisobot</p>
+          <p className="text-sm text-gray-500">12 oylik umumiy hisobot</p>
         </div>
       </div>
 
       {/* Year Selector */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between px-1.5 py-1.5">
         <button onClick={() => setYear(y => String(parseInt(y) - 1))}
-          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors">
+          className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors">
           <ChevronLeft className="w-4 h-4 text-gray-500" />
         </button>
         <div className="flex items-baseline gap-1.5">
@@ -56,23 +59,31 @@ export default function Annual() {
           {year === currentYear && <span className="text-[11px] text-blue-500">● Joriy</span>}
         </div>
         <button onClick={() => setYear(y => String(parseInt(y) + 1))} disabled={year >= currentYear}
-          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-25">
+          className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-25">
           <ChevronRight className="w-4 h-4 text-gray-500" />
         </button>
       </div>
 
+      {error && (
+        <div className="card flex items-center gap-3 text-red-600 bg-red-50 border-red-100">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <span className="text-sm">{error}</span>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 text-blue-500 animate-spin" /></div>
-      ) : (
+      ) : error ? null : (
         <>
           {/* Year totals */}
           {(yearTotalUZS > 0 || yearTotalUSD > 0) && (
             <div className="card">
               <p className="text-sm text-gray-500 mb-2">{year} yil jami to'lovlar</p>
               <div className="space-y-1">
-                {yearTotalUZS > 0 && <p className="text-2xl font-bold text-gray-900">{formatMoney(yearTotalUZS, 'UZS')}</p>}
-                {yearTotalUSD > 0 && <p className="text-2xl font-bold text-gray-900">{formatMoney(yearTotalUSD, 'USD')}</p>}
+                {yearTotalUZS > 0 && <p className="text-2xl md:text-3xl font-bold text-gray-900">{formatMoney(yearTotalUZS, 'UZS')}</p>}
+                {yearTotalUSD > 0 && <p className="text-2xl md:text-3xl font-bold text-gray-900">{formatMoney(yearTotalUSD, 'USD')}</p>}
               </div>
+              <p className="text-xs text-gray-400 mt-1">{yearPaid} ta oylik to'lov</p>
             </div>
           )}
 
@@ -87,7 +98,9 @@ export default function Annual() {
                 <button
                   key={m.month}
                   onClick={() => navigate(`/?month=${m.month}`)}
-                  className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-left transition-all hover:shadow-md active:scale-[0.98]"
+                  className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-left transition-all ${
+                    isFuture ? 'cursor-default' : 'hover:shadow-md active:scale-[0.98]'
+                  }`}
                 >
                   <div className="flex items-baseline gap-1.5 mb-1">
                     <span className={`font-bold text-base ${isFuture ? 'text-gray-300' : 'text-gray-900'}`}>

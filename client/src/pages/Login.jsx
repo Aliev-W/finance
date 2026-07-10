@@ -38,7 +38,7 @@ export default function Login({ onLogin }) {
       </div>
 
       {/* Forma */}
-      <div className="card w-full max-w-sm p-6 space-y-4">
+      <form onSubmit={handleSubmit} className="card w-full max-w-sm p-6 space-y-4">
         <div>
           <label className="label">Login</label>
           <input
@@ -48,6 +48,7 @@ export default function Login({ onLogin }) {
             placeholder="admin"
             autoComplete="username"
             autoCapitalize="none"
+            autoFocus
             className="input-field"
           />
         </div>
@@ -66,7 +67,7 @@ export default function Login({ onLogin }) {
             <button
               type="button"
               onClick={() => setShowPass(p => !p)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-gray-600 transition-colors"
             >
               {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
@@ -81,7 +82,7 @@ export default function Login({ onLogin }) {
         )}
 
         <button
-          onClick={handleSubmit}
+          type="submit"
           disabled={loading}
           className="btn-primary w-full text-base py-3.5"
         >
@@ -89,7 +90,7 @@ export default function Login({ onLogin }) {
             ? <><Loader2 className="w-5 h-5 animate-spin" /> Kirish...</>
             : 'Kirish'}
         </button>
-      </div>
+      </form>
 
       <p className="text-xs text-gray-300 mt-8">v2.0</p>
     </div>

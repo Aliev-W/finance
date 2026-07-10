@@ -41,7 +41,7 @@ export default function Workers() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Ishchilar</h1>
-          <p className="text-sm text-gray-500">{workers.length} ta ishchi</p>
+          <p className="text-sm text-gray-500">{search ? `${filtered.length} / ${workers.length}` : workers.length} ta ishchi</p>
         </div>
         <button
           onClick={() => navigate('/workers/new')}

@@ -66,12 +66,12 @@ export default function PhotoCapture({ onFileSelect, label = "Rasm olish (imzo b
             </div>
             <div>
               <p className="font-semibold text-gray-700">{label}</p>
-              <p className="text-sm text-gray-400 mt-1">
+              <p className="text-sm text-gray-500 mt-1">
                 Telefonda — kamera ochiladi<br />
                 Kompyuterda — fayl tanlang
               </p>
             </div>
-            <div className="flex items-center gap-2 text-xs text-gray-400">
+            <div className="flex items-center gap-2 text-xs text-gray-500">
               <Camera className="w-3.5 h-3.5" /> Kamera
               <span className="text-gray-200">|</span>
               <Upload className="w-3.5 h-3.5" /> Yuklash
@@ -87,13 +87,13 @@ export default function PhotoCapture({ onFileSelect, label = "Rasm olish (imzo b
           />
         </div>
       ) : (
-        <div className="relative rounded-2xl overflow-hidden border border-gray-200">
-          <img src={preview} alt="Olingan rasm" className="w-full max-h-64 object-cover" />
+        <div className="relative rounded-2xl overflow-hidden border border-gray-200 bg-gray-100">
+          <img src={preview} alt="Olingan rasm" className="w-full max-h-64 object-contain" />
           <div className="absolute top-2 right-2 flex gap-2">
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
-              className="bg-white/90 backdrop-blur text-gray-700 rounded-full p-2 shadow-md hover:bg-white transition-colors"
+              className="bg-white/90 backdrop-blur text-gray-700 rounded-full p-2.5 shadow-md hover:bg-white transition-colors"
               title="Qayta olish"
             >
               <RefreshCw className="w-4 h-4" />
@@ -101,7 +101,7 @@ export default function PhotoCapture({ onFileSelect, label = "Rasm olish (imzo b
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); clear(); }}
-              className="bg-red-500 text-white rounded-full p-2 shadow-md hover:bg-red-600 transition-colors"
+              className="bg-red-500 text-white rounded-full p-2.5 shadow-md hover:bg-red-600 transition-colors"
               title="O'chirish"
             >
               <X className="w-4 h-4" />

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, UserPlus, Plus, Trash2, Loader2, Info } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Loader2, Info } from 'lucide-react';
 import { getWorker, createWorker, updateWorker, addFamilyMember, deleteFamilyMember } from '../api';
 import { RELATIONS } from '../utils';
-import Modal from '../components/Modal';
+import Modal, { ConfirmModal } from '../components/Modal';
 
 export default function AddWorker() {
   const navigate = useNavigate();
@@ -23,6 +23,7 @@ export default function AddWorker() {
   const [showFamilyModal, setShowFamilyModal] = useState(false);
   const [familyForm, setFamilyForm] = useState({ name: '', relationship: "O'zi", phone: '', is_primary: false });
   const [savingFamily, setSavingFamily] = useState(false);
+  const [deleteFamilyId, setDeleteFamilyId] = useState(null);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -85,7 +86,6 @@ export default function AddWorker() {
   };
 
   const handleDeleteFamily = async (fid) => {
-    if (!confirm('Oila azosini o\'chirishni tasdiqlaysizmi?')) return;
     try {
       await deleteFamilyMember(id, fid);
       setFamily(p => p.filter(m => m.id !== fid));
@@ -123,11 +123,9 @@ export default function AddWorker() {
       <form onSubmit={handleSave} className="space-y-4">
         {/* Basic Info */}
         <div className="card space-y-4">
-          <h2 className="font-semibold text-gray-700 text-sm flex items-center gap-2">
-            <UserPlus className="w-4 h-4" /> Asosiy ma'lumotlar
-          </h2>
+          <h2 className="font-semibold text-gray-700 text-sm">Asosiy ma'lumotlar</h2>
           <div>
-            <label className="label">Ism va familiya *</label>
+            <label className="label">Ism va familiya <span className="text-red-500">*</span></label>
             <input name="name" value={form.name} onChange={handleChange}
               placeholder="Aliyev Jamshid" className="input-field" required />
           </div>
@@ -192,7 +190,7 @@ export default function AddWorker() {
               <button
                 type="button"
                 onClick={() => setShowFamilyModal(true)}
-                className="text-xs text-blue-600 font-semibold flex items-center gap-1"
+                className="text-xs text-blue-600 font-semibold flex items-center gap-1 py-2 px-1 -mr-1"
               >
                 <Plus className="w-3.5 h-3.5" /> Qo'shish
               </button>
@@ -210,8 +208,8 @@ export default function AddWorker() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleDeleteFamily(m.id)}
-                      className="p-2 text-red-400 hover:text-red-600 rounded-lg hover:bg-red-50"
+                      onClick={() => setDeleteFamilyId(m.id)}
+                      className="p-2.5 -m-0.5 text-red-400 hover:text-red-600 rounded-lg hover:bg-red-50"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -241,7 +239,7 @@ export default function AddWorker() {
       <Modal open={showFamilyModal} onClose={closeFamilyModal} title="Oila azosi qo'shish">
         <form onSubmit={handleAddFamily} className="space-y-4">
           <div>
-            <label className="label">Ism va familiya *</label>
+            <label className="label">Ism va familiya <span className="text-red-500">*</span></label>
             <input
               value={familyForm.name}
               onChange={e => setFamilyForm(p => ({ ...p, name: e.target.value }))}
@@ -285,6 +283,16 @@ export default function AddWorker() {
           </button>
         </form>
       </Modal>
+
+      <ConfirmModal
+        open={!!deleteFamilyId}
+        onClose={() => setDeleteFamilyId(null)}
+        onConfirm={() => handleDeleteFamily(deleteFamilyId)}
+        title="Oila azosini o'chirish"
+        message="Oila azosini o'chirishni tasdiqlaysizmi?"
+        confirmText="O'chirish"
+        confirmClass="btn-danger"
+      />
     </div>
   );
 }

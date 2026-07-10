@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  ArrowLeft, CheckCircle, Loader2, AlertCircle, User, PenLine, Camera, ChevronDown, ChevronUp
+  ArrowLeft, CheckCircle, Loader2, AlertCircle, User, PenLine, Camera, ChevronDown, Check, X
 } from 'lucide-react';
 import { getWorkers, getWorker, getWorkerReport, createPayment, uploadPhoto } from '../api';
-import { formatMoney, currentMonth, MONTHS_LIST, RELATIONS } from '../utils';
+import { formatMoney, currentMonth, MONTHS_LIST, RELATIONS, paymentTypeLabel } from '../utils';
 import PhotoCapture from '../components/PhotoCapture';
 import SignaturePad from '../components/SignaturePad';
 
@@ -243,8 +243,18 @@ export default function PaySalary() {
               value={workerSearch}
               onChange={e => { setWorkerSearch(e.target.value); setShowWorkerList(true); setSelectedWorker(null); }}
               onFocus={() => setShowWorkerList(true)}
-              className="input-field pl-11"
+              className="input-field pl-11 pr-11"
             />
+            {workerSearch && (
+              <button
+                type="button"
+                onClick={() => { setWorkerSearch(''); setSelectedWorker(null); setShowWorkerList(true); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600"
+                aria-label="Qidiruvni tozalash"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           {showWorkerList && workerSearch && (
@@ -283,7 +293,7 @@ export default function PaySalary() {
               <p className="text-xs font-semibold text-amber-700 mb-1.5">Bu oy uchun mavjud to'lovlar:</p>
               {existingPayments.map(p => (
                 <p key={p.id} className="text-xs text-amber-600">
-                  {p.payment_type === 'full' ? "To'liq" : 'Qisman'}: {formatMoney(p.amount, p.currency)}
+                  {paymentTypeLabel(p.payment_type)}: {formatMoney(p.amount, p.currency)}
                   {p.receiver_name ? ` — ${p.receiver_name}` : ''}
                 </p>
               ))}
@@ -443,7 +453,7 @@ export default function PaySalary() {
               <select
                 value={form.receiver_relation}
                 onChange={e => setForm(p => ({ ...p, receiver_relation: e.target.value }))}
-                className="input-field w-28 flex-shrink-0"
+                className="input-field min-w-[8rem] flex-shrink-0"
               >
                 {RELATIONS.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
@@ -456,7 +466,7 @@ export default function PaySalary() {
           <button
             type="button"
             onClick={() => setShowSignature(s => !s)}
-            className="flex items-center justify-between w-full"
+            className="flex items-center justify-between w-full py-2"
           >
             <span className="font-semibold text-gray-700 text-sm flex items-center gap-2">
               <PenLine className="w-4 h-4 text-gray-400" />
@@ -464,10 +474,12 @@ export default function PaySalary() {
               <span className="text-xs text-gray-400 font-normal">(ixtiyoriy)</span>
             </span>
             <div className="flex items-center gap-1.5">
-              {signatureFile && <span className="text-xs text-green-600 font-semibold">✓ Saqlandi</span>}
-              {showSignature
-                ? <ChevronUp className="w-4 h-4 text-gray-400" />
-                : <ChevronDown className="w-4 h-4 text-gray-400" />}
+              {signatureFile && (
+                <span className="flex items-center gap-1 text-xs text-green-600 font-semibold">
+                  <Check className="w-3.5 h-3.5" /> Saqlandi
+                </span>
+              )}
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${showSignature ? 'rotate-180' : ''}`} />
             </div>
           </button>
           {showSignature && (
@@ -486,7 +498,7 @@ export default function PaySalary() {
           <button
             type="button"
             onClick={() => setShowPhoto(s => !s)}
-            className="flex items-center justify-between w-full"
+            className="flex items-center justify-between w-full py-2"
           >
             <span className="font-semibold text-gray-700 text-sm flex items-center gap-2">
               <Camera className="w-4 h-4 text-gray-400" />
@@ -494,10 +506,8 @@ export default function PaySalary() {
               <span className="text-xs text-gray-400 font-normal">(ixtiyoriy)</span>
             </span>
             <div className="flex items-center gap-1.5">
-              {photoFile && <span className="text-xs text-green-600 font-semibold">✓</span>}
-              {showPhoto
-                ? <ChevronUp className="w-4 h-4 text-gray-400" />
-                : <ChevronDown className="w-4 h-4 text-gray-400" />}
+              {photoFile && <Check className="w-3.5 h-3.5 text-green-600" />}
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${showPhoto ? 'rotate-180' : ''}`} />
             </div>
           </button>
           {showPhoto && (

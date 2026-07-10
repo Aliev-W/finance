@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, Shield, Database, Calendar, Download, Upload,
-  Lock, Unlock, Trash2, CheckCircle, AlertCircle, ChevronRight, Eye, EyeOff, LogOut
+  Lock, Unlock, Trash2, CheckCircle, AlertCircle, ChevronRight, Eye, EyeOff, LogOut, Loader2
 } from 'lucide-react';
 import { downloadBackup, restoreBackup } from '../api';
 import Modal from '../components/Modal';
@@ -104,7 +104,7 @@ export default function Settings() {
           <Shield className="w-4 h-4 text-blue-600" />
           <span className="font-semibold text-gray-700 text-sm">Xavfsizlik</span>
         </div>
-        <div className="px-4 pb-2">
+        <div className="px-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               {hasPin ? <Lock className="w-4 h-4 text-green-600" /> : <Unlock className="w-4 h-4 text-gray-400" />}
@@ -114,7 +114,7 @@ export default function Settings() {
               {hasPin ? "O'rnatilgan" : "O'rnatilmagan"}
             </span>
           </div>
-          <div className="space-y-2 pb-3">
+          <div className="space-y-2 pb-4">
             {!hasPin && (
               <button onClick={() => openPin('set')} className="btn-primary w-full">
                 <Lock className="w-4 h-4" /> PIN kod o'rnatish
@@ -125,7 +125,7 @@ export default function Settings() {
                 <button onClick={() => openPin('change')} className="btn-secondary w-full">
                   <Shield className="w-4 h-4" /> PIN kodni o'zgartirish
                 </button>
-                <button onClick={() => openPin('remove')} className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition-colors border border-red-100">
+                <button onClick={() => openPin('remove')} className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition-colors border border-red-100">
                   <Trash2 className="w-4 h-4" /> PIN kodni o'chirish
                 </button>
               </>
@@ -144,12 +144,12 @@ export default function Settings() {
           <p className="text-xs text-gray-400">Barcha ma'lumotlarni kompyuterga saqlang yoki avvalgi nusxadan tiklang.</p>
 
           {backupMsg && (
-            <div className={`flex items-start gap-2 rounded-xl p-3 text-sm ${
-              backupMsg.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+            <div className={`flex items-center gap-3 rounded-2xl border p-4 text-sm ${
+              backupMsg.type === 'success' ? 'bg-green-50 border-green-100 text-green-700' : 'bg-red-50 border-red-100 text-red-700'
             }`}>
               {backupMsg.type === 'success'
-                ? <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                : <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />}
+                ? <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
               <span>{backupMsg.text}</span>
             </div>
           )}
@@ -163,7 +163,7 @@ export default function Settings() {
             disabled={restoring}
             className="btn-secondary w-full"
           >
-            <Upload className="w-4 h-4" />
+            {restoring ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
             {restoring ? 'Tiklanmoqda...' : "Zaxira nusxadan tiklash"}
           </button>
           <input
@@ -173,7 +173,7 @@ export default function Settings() {
             className="hidden"
             onChange={handleRestore}
           />
-          <p className="text-xs text-gray-400 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> Tiklash joriy ma'lumotlarning ustiga yozadi.</p>
+          <p className="text-xs text-amber-600 font-medium flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> Tiklash joriy ma'lumotlarning ustiga yozadi.</p>
         </div>
       </div>
 
@@ -199,7 +199,7 @@ export default function Settings() {
           sessionStorage.removeItem('unlocked');
           window.location.reload();
         }}
-        className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition-colors border border-red-100"
+        className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition-colors border border-red-100"
       >
         <LogOut className="w-4 h-4" /> Tizimdan chiqish
       </button>
@@ -246,7 +246,7 @@ export default function Settings() {
           <button
             type="button"
             onClick={() => setShowPin(p => !p)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-gray-600 transition-colors"
           >
             {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>

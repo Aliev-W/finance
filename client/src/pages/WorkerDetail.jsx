@@ -309,7 +309,10 @@ export default function WorkerDetail() {
           <h3 className="font-semibold text-gray-700 text-sm mb-2 flex items-center gap-2">
             <Wallet className="w-4 h-4 text-indigo-500" /> Boshqa to'lovlar
           </h3>
-          <p className="text-sm text-gray-400">Yuklashda xatolik yuz berdi</p>
+          <p className="text-sm text-gray-400">
+            Yuklashda xatolik yuz berdi.{' '}
+            <button onClick={loadOther} className="text-blue-600 font-medium">Qayta urinish</button>
+          </p>
         </div>
       )}
       {!otherLoading && !otherError && otherPayments.length > 0 && (

@@ -295,15 +295,20 @@ function DebtRow({ debt: p, onDelete, onChanged }) {
 
   const handleRepay = async (e) => {
     e.preventDefault();
+    if (repaySaving) return;
     if (!repayAmount || parseFloat(repayAmount) <= 0) { setRepayError('Miqdor kiritilishi shart'); return; }
     if (isCrossCurrency && (!repayEquivalent || parseFloat(repayEquivalent) <= 0)) {
       setRepayError(`${p.currency === 'USD' ? '$' : "so'm"} hisobida nechaga tengligini kiriting`);
       return;
     }
+    const reductionAmount = isCrossCurrency ? parseFloat(repayEquivalent) : parseFloat(repayAmount);
+    if (reductionAmount > remaining + 0.01) {
+      setRepayError(`Miqdor qolgan qarzdan (${formatMoney(remaining, p.currency)}) oshib ketmasligi kerak`);
+      return;
+    }
     setRepaySaving(true);
     setRepayError(null);
     try {
-      const reductionAmount = isCrossCurrency ? parseFloat(repayEquivalent) : parseFloat(repayAmount);
       const notes = isCrossCurrency
         ? `${formatMoney(parseFloat(repayAmount), repayCurrency)} qabul qilindi`
         : '';

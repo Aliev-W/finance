@@ -15,6 +15,14 @@ const MAX_LOGIN_ATTEMPTS = 5;
 const LOGIN_LOCKOUT_MS = 15 * 60 * 1000;
 const loginAttempts = new Map(); // ip -> { count, lockedUntil }
 
+// Prevent unbounded growth from many distinct IPs (e.g. a rotating-IP attack)
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, state] of loginAttempts) {
+    if (state.lockedUntil <= now) loginAttempts.delete(ip);
+  }
+}, 30 * 60 * 1000).unref();
+
 function generateToken() {
   return crypto.createHmac('sha256', SECRET_KEY)
     .update(APP_USERNAME + ':' + APP_PASSWORD)

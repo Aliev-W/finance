@@ -163,6 +163,14 @@ router.post('/:id/repayments', async (req, res) => {
     if (isNaN(parsedAmount) || parsedAmount <= 0)
       return res.status(400).json({ error: "Miqdor 0 dan katta bo'lishi shart" });
 
+    const repaidRow = await queryOne(
+      'SELECT COALESCE(SUM(amount), 0) as repaid FROM loan_repayments WHERE other_payment_id = ?',
+      [req.params.id]
+    );
+    const { remaining } = withDebtFields({ ...loan, repaid_amount: repaidRow.repaid });
+    if (parsedAmount > remaining + 0.01)
+      return res.status(400).json({ error: `Qaytarish miqdori qolgan qarzdan (${remaining}) oshib ketmasligi kerak` });
+
     const result = await run(
       `INSERT INTO loan_repayments (other_payment_id, amount, notes, paid_at) VALUES (?,?,?,?)`,
       [req.params.id, parsedAmount, notes || '', paid_at || new Date().toISOString()]

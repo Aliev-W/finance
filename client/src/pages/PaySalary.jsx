@@ -453,7 +453,7 @@ export default function PaySalary() {
               <select
                 value={form.receiver_relation}
                 onChange={e => setForm(p => ({ ...p, receiver_relation: e.target.value }))}
-                className="input-field min-w-[8rem] flex-shrink-0"
+                className="input-field w-36 flex-shrink-0"
               >
                 {RELATIONS.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
